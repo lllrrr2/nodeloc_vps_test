@@ -202,39 +202,33 @@ function parseResponse($content) {
 function parseRouteTrace($content) {
     $metrics = [];
     
-    // 查找所有路由追踪块
-    preg_match_all('/No:(\d+)\/9 Traceroute to ([^\n]+)\n([\s\S]*?)(?=No:\d+\/9|$)/u', $content, $blocks, PREG_SET_ORDER);
+    // 提取服务器信息（国家、城市、服务商）
+    if (preg_match('/国家:\s*([^\s]+)\s+城市:\s*([^\s]+)\s+服务商:\s*(.+)/u', $content, $serverMatch)) {
+        $metrics['_server_info'] = [
+            'country' => trim($serverMatch[1]),
+            'city' => trim($serverMatch[2]),
+            'provider' => trim($serverMatch[3])
+        ];
+    }
     
-    foreach ($blocks as $block) {
-        $routeNum = $block[1];
-        $destination = trim($block[2]);
-        $traceContent = $block[3];
+    // 解析路由线路（新格式：地区 IP 线路 线路类型）
+    preg_match_all('/(北京|上海|广州|成都)(电信|联通|移动)\s+([\d\.]+)\s+(\S+)\s+\[([^\]]+)\]/u', $content, $matches, PREG_SET_ORDER);
+    
+    foreach ($matches as $match) {
+        $region = trim($match[1]);
+        $isp = trim($match[2]);
+        $ip = trim($match[3]);
+        $routeType = trim($match[4]);
+        $lineQuality = trim($match[5]);
         
-        // 提取跳点信息
-        $hops = [];
-        preg_match_all('/^\s*(\d+)\s+([^\n]+)/m', $traceContent, $hopMatches, PREG_SET_ORDER);
+        $label = $region . $isp;
         
-        foreach ($hopMatches as $hopMatch) {
-            $hopNum = $hopMatch[1];
-            $hopInfo = trim($hopMatch[2]);
-            
-            // 简化跳点信息：提取IP或主机名
-            if (preg_match('/(\d+\.\d+\.\d+\.\d+)/', $hopInfo, $ipMatch)) {
-                $hops[] = $ipMatch[1];
-            } elseif (preg_match('/([a-zA-Z0-9\-\.]+\.[a-z]{2,})/i', $hopInfo, $hostMatch)) {
-                $hops[] = $hostMatch[1];
-            } elseif (stripos($hopInfo, '*') === false) {
-                // 提取第一个有意义的词
-                $words = preg_split('/\s+/', $hopInfo);
-                if (!empty($words[0]) && strlen($words[0]) > 2) {
-                    $hops[] = $words[0];
-                }
-            }
-        }
-        
-        $metrics["路由 $routeNum"] = [
-            'destination' => $destination,
-            'hops' => $hops
+        $metrics[$label] = [
+            'region' => $region,
+            'isp' => $isp,
+            'ip' => $ip,
+            'route' => $routeType,
+            'quality' => $lineQuality
         ];
     }
     
@@ -290,10 +284,20 @@ function generateResultImage($data) {
         $currentY += 20;  // 从30减到20
     }
     
-    // 2. IP质量
-    if (!empty($sections['IP质量']['metrics'])) {
+    // 2. IP质量（合并服务器信息）
+    if (!empty($sections['IP质量']['metrics']) || !empty($sections['回程路由']['metrics']['_server_info'])) {
+        $ipMetrics = $sections['IP质量']['metrics'] ?? [];
+        
+        // 添加服务器信息到IP质量
+        if (!empty($sections['回程路由']['metrics']['_server_info'])) {
+            $serverInfo = $sections['回程路由']['metrics']['_server_info'];
+            $ipMetrics['国家'] = $serverInfo['country'];
+            $ipMetrics['城市'] = $serverInfo['city'];
+            $ipMetrics['服务商'] = $serverInfo['provider'];
+        }
+        
         $currentY = drawSection($image, $draw, $padding, $currentY, $width,
-                                "🌐 IP质量", $sections['IP质量']['metrics'], 'ipquality');
+                                "🌐 IP质量", $ipMetrics, 'ipquality');
         $currentY += 20;
     }
     
@@ -321,8 +325,12 @@ function generateResultImage($data) {
     
     // 7. 回程路由
     if (!empty($sections['回程路由']['metrics'])) {
+        // 计算实际路由数量（排除_server_info）
+        $routeCount = count(array_filter(array_keys($sections['回程路由']['metrics']), function($k) {
+            return $k !== '_server_info';
+        }));
         $currentY = drawSection($image, $draw, $padding, $currentY, $width,
-                                "🔄 回程路由 (9条)", $sections['回程路由']['metrics'], 'routes');
+                                "🔄 回程路由 ({$routeCount}条)", $sections['回程路由']['metrics'], 'routes');
         $currentY += 20;  // 从30减到20
     }
     
@@ -779,76 +787,73 @@ function drawBarChartCompact($image, $draw, $x, $y, $width, $metrics) {
 }
 
 function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
-    $itemWidth = 370;
-    $itemHeight = 90;  // 增加高度显示跳点
-    $cols = 3;
-    $spacing = 12;
+    $itemWidth = 280;
+    $itemHeight = 85;
+    $cols = 4;
+    $spacing = 10;
     $col = 0;
     $currentX = $x;
     $currentY = $y;
     
     foreach ($metrics as $label => $routeData) {
+        // 跳过服务器信息（已在IP质量中显示）
+        if ($label === '_server_info') continue;
+        
         // 解析路由数据
-        if (is_array($routeData)) {
-            $destination = $routeData['destination'] ?? '';
-            $hops = $routeData['hops'] ?? [];
+        if (!is_array($routeData)) continue;
+        
+        $region = $routeData['region'] ?? '';
+        $isp = $routeData['isp'] ?? '';
+        $route = $routeData['route'] ?? '';
+        $quality = $routeData['quality'] ?? '普通线路';
+        
+        // 根据线路质量确定颜色
+        $isHighQuality = (strpos($quality, '优质') !== false);
+        
+        // ISP颜色
+        if (strpos($isp, '电信') !== false) {
+            $ispColor = $isHighQuality ? '#1976D2' : '#42A5F5';  // 优质深蓝，普通浅蓝
+        } elseif (strpos($isp, '联通') !== false) {
+            $ispColor = $isHighQuality ? '#388E3C' : '#66BB6A';  // 优质深绿，普通浅绿
+        } elseif (strpos($isp, '移动') !== false) {
+            $ispColor = $isHighQuality ? '#F57C00' : '#FFA726';  // 优质深橙，普通浅橙
         } else {
-            $destination = $routeData;
-            $hops = [];
+            $ispColor = '#757575';
         }
         
-        // 确定颜色
-        $color = '#42A5F5';
-        if (stripos($destination, '电信') !== false) $color = '#42A5F5';
-        elseif (stripos($destination, '联通') !== false) $color = '#66BB6A';
-        elseif (stripos($destination, '移动') !== false) $color = '#FFA726';
+        // 背景色（优质线路用淡色背景）
+        $bgColor = $isHighQuality ? '#F1F8E9' : '#FFFFFF';
         
         // 绘制卡片
         $cardDraw = new ImagickDraw();
-        $cardDraw->setFillColor('#FFFFFF');
-        $cardDraw->setStrokeColor('#E0E0E0');
-        $cardDraw->setStrokeWidth(1);
+        $cardDraw->setFillColor($bgColor);
+        $cardDraw->setStrokeColor($isHighQuality ? $ispColor : '#E0E0E0');
+        $cardDraw->setStrokeWidth($isHighQuality ? 2 : 1);
         $cardDraw->roundRectangle($currentX, $currentY, $currentX + $itemWidth, $currentY + $itemHeight, 8, 8);
         $image->drawImage($cardDraw);
         
         // 顶部色条
-        $cardDraw->setFillColor($color);
+        $cardDraw->setFillColor($ispColor);
         $cardDraw->rectangle($currentX + 1, $currentY + 1, $currentX + $itemWidth - 1, $currentY + 5);
         $image->drawImage($cardDraw);
         
-        // 路由编号
-        $draw->setFillColor($color);
-        $draw->setFontSize(12);
+        // 地区+ISP标签
+        $draw->setFillColor($ispColor);
+        $draw->setFontSize(13);
         $draw->setFontWeight(700);
-        $image->annotateImage($draw, $currentX + 15, $currentY + 22, 0, $label);
+        $image->annotateImage($draw, $currentX + 15, $currentY + 28, 0, $label);
         
-        // 目的地
+        // 线路类型
         $draw->setFillColor('#212121');
         $draw->setFontSize(11);
-        $draw->setFontWeight(400);
-        $maxLen = 42;
-        if (mb_strlen($destination) > $maxLen) {
-            $dest = mb_substr($destination, 0, $maxLen - 3) . '...';
-        } else {
-            $dest = $destination;
-        }
-        $image->annotateImage($draw, $currentX + 15, $currentY + 38, 0, $dest);
+        $draw->setFontWeight(600);
+        $image->annotateImage($draw, $currentX + 15, $currentY + 48, 0, $route);
         
-        // 显示跳点信息
-        if (!empty($hops)) {
-            $draw->setFontSize(9);
-            $draw->setFillColor('#757575');
-            $hopText = '跳点: ' . implode(' → ', array_slice($hops, 0, 3));  // 显示前3跳
-            if (count($hops) > 3) $hopText .= ' ...';
-            $image->annotateImage($draw, $currentX + 15, $currentY + 55, 0, $hopText);
-            
-            // 显示后续跳点
-            if (count($hops) > 3) {
-                $hopText2 = implode(' → ', array_slice($hops, 3, 3));
-                if (count($hops) > 6) $hopText2 .= ' ...';
-                $image->annotateImage($draw, $currentX + 15, $currentY + 68, 0, $hopText2);
-            }
-        }
+        // 线路质量标签
+        $draw->setFillColor($isHighQuality ? '#558B2F' : '#757575');
+        $draw->setFontSize(10);
+        $draw->setFontWeight(400);
+        $image->annotateImage($draw, $currentX + 15, $currentY + 68, 0, $quality);
         
         $col++;
         if ($col >= $cols) {
