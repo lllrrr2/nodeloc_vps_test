@@ -626,6 +626,12 @@ function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
 function drawFooter($image, $draw, $width, $height) {
     $footerY = $height - 50;
     
+    // 设置字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
+    
     // 底部背景
     $footerDraw = new ImagickDraw();
     $footerDraw->setFillColor('#0D47A1');
@@ -635,8 +641,8 @@ function drawFooter($image, $draw, $width, $height) {
     // 水印
     $draw->setFillColor('#FFFFFF');
     $draw->setFontSize(11);
-    $finalImage->annotateImage($draw, 25, $footerY + 30, 0, "Powered by bench.nodeloc.cc");
-    $finalImage->annotateImage($draw, $width - 150, $footerY + 30, 0, "NodeLoc.com");
+    $image->annotateImage($draw, 25, $footerY + 30, 0, "Powered by bench.nodeloc.cc");
+    $image->annotateImage($draw, $width - 150, $footerY + 30, 0, "NodeLoc.com");
 }
 
 function findChineseFont() {
