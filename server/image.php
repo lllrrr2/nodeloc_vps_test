@@ -202,8 +202,8 @@ function parseResponse($content) {
 function parseRouteTrace($content) {
     $metrics = [];
     
-    // 提取服务器信息（国家、城市、服务商）
-    if (preg_match('/国家:\s*([^\s]+)\s+城市:\s*([^\s]+)\s+服务商:\s*(.+)/u', $content, $serverMatch)) {
+    // 提取服务器信息（国家、城市、服务商）- 城市可能包含空格
+    if (preg_match('/国家:\s*([^\s]+)\s+城市:\s*(.+?)\s+服务商:\s*(.+)/u', $content, $serverMatch)) {
         $metrics['_server_info'] = [
             'country' => trim($serverMatch[1]),
             'city' => trim($serverMatch[2]),
