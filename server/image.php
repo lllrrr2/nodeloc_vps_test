@@ -488,9 +488,30 @@ function drawIPCards(&$svg, $x, $y, $metrics) {
     $cy = $y;
     
     foreach ($metrics as $key => $value) {
+        // 根据风险评分动态设置颜色
+        $accentColor = '#10B981'; // 默认绿色
+        if ($key === '风险') {
+            // 提取风险评分数字
+            preg_match('/(\d+)/', $value, $match);
+            if (!empty($match[1])) {
+                $score = intval($match[1]);
+                if ($score <= 10) {
+                    $accentColor = '#10B981'; // 极低风险：绿色
+                } elseif ($score <= 30) {
+                    $accentColor = '#34D399'; // 低风险：浅绿
+                } elseif ($score <= 50) {
+                    $accentColor = '#FBBF24'; // 中等风险：黄色
+                } elseif ($score <= 70) {
+                    $accentColor = '#FB923C'; // 较高风险：橙色
+                } else {
+                    $accentColor = '#EF4444'; // 极高风险：红色
+                }
+            }
+        }
+        
         $svg[] = '<g filter="url(#shadow)">';
         $svg[] = '<rect x="' . $cx . '" y="' . $cy . '" width="' . $w . '" height="' . $h . '" rx="12" fill="url(#cardBg)"/>';
-        $svg[] = '<rect x="' . $cx . '" y="' . $cy . '" width="' . $w . '" height="4" rx="12 12 0 0" fill="#10B981"/>';
+        $svg[] = '<rect x="' . $cx . '" y="' . $cy . '" width="' . $w . '" height="4" rx="12 12 0 0" fill="' . $accentColor . '"/>';
         $svg[] = '</g>';
         
         $svg[] = '<text x="' . ($cx + 14) . '" y="' . ($cy + 30) . '" class="card-label">' . htmlspecialchars($key) . '</text>';
