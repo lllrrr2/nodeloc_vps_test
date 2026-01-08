@@ -225,8 +225,10 @@ install_dependencies() {
     case "${os_type,,}" in
         debian|ubuntu)
             export DEBIAN_FRONTEND=noninteractive 
+            # 预配置 iperf3 避免交互
+            echo "iperf3 iperf3/start_daemon boolean false" | sudo debconf-set-selections
             echo "iperf3 iperf3/autostart boolean false" | sudo debconf-set-selections
-            install_cmd="apt-get install -yq"
+            install_cmd="apt-get install -yq -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\""
             sudo apt-get update -yq
             ;;
         centos|rhel|fedora)
@@ -253,7 +255,7 @@ install_dependencies() {
     for dep in "${dependencies[@]}"; do
         if ! command -v "$dep" &>/dev/null; then
             echo -e "${YELLOW}正在安装 $dep...${NC}"
-            if ! sudo $install_cmd "$dep"; then
+            if ! sudo bash -c "$install_cmd $dep" < /dev/null; then
                 echo -e "${RED}无法安装 $dep。请手动安装此依赖项。${NC}"
             fi
         else
