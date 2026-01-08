@@ -410,6 +410,8 @@ function drawSection($image, $draw, $x, $y, $width, $title, $metrics, $type) {
     switch ($type) {
         case 'info':
             return drawInfoCards($image, $draw, $x, $y, $width, $metrics);
+        case 'ipquality':
+            return drawIPQualitySingle($image, $draw, $x, $y, $width, $metrics);
         case 'grid':
             return drawStreamingGrid($image, $draw, $x, $y, $width, $metrics);
         case 'bar':
@@ -424,97 +426,119 @@ function drawSection($image, $draw, $x, $y, $width, $title, $metrics, $type) {
 }
 
 function drawInfoCards($image, $draw, $x, $y, $width, $metrics) {
-    // 单行横向显示所有信息
+    // 单个大卡片，横向排列所有信息
     $parts = [];
     foreach ($metrics as $key => $value) {
         $parts[] = "$key: $value";
     }
     $text = implode(' | ', $parts);
     
-    // 绘制背景条
-    $barHeight = 45;
-    $barDraw = new ImagickDraw();
-    $barDraw->setFillColor('#FFFFFF');
-    $barDraw->setStrokeColor('#E0E0E0');
-    $barDraw->setStrokeWidth(1);
-    $barDraw->roundRectangle($x, $y, $x + $width - 50, $y + $barHeight, 8, 8);
-    $image->drawImage($barDraw);
+    $cardHeight = 70;
+    
+    // 绘制卡片背景
+    $cardDraw = new ImagickDraw();
+    $cardDraw->setFillColor('#FFFFFF');
+    $cardDraw->setStrokeColor('#E0E0E0');
+    $cardDraw->setStrokeWidth(1);
+    $cardDraw->roundRectangle($x, $y, $x + $width - 50, $y + $cardHeight, 10, 10);
+    $image->drawImage($cardDraw);
     
     // 顶部色条
-    $barDraw->setFillColor('#42A5F5');
-    $barDraw->rectangle($x + 1, $y + 1, $x + $width - 51, $y + 4);
-    $image->drawImage($barDraw);
+    $cardDraw->setFillColor('#42A5F5');
+    $cardDraw->rectangle($x + 1, $y + 1, $x + $width - 51, $y + 5);
+    $image->drawImage($cardDraw);
     
-    // 文字
+    // 标题
+    $draw->setFillColor('#1A73E8');
+    $draw->setFontSize(13);
+    $draw->setFontWeight(600);
+    $image->annotateImage($draw, $x + 20, $y + 28, 0, "系统配置");
+    
+    // 内容文字
     $draw->setFillColor('#212121');
     $draw->setFontSize(11);
-    $image->annotateImage($draw, $x + 20, $y + 28, 0, $text);
+    $draw->setFontWeight(400);
+    $image->annotateImage($draw, $x + 20, $y + 50, 0, $text);
     
-    return $y + $barHeight + 15;
+    return $y + $cardHeight + 15;
 }
 
 function drawIPQualitySingle($image, $draw, $x, $y, $width, $metrics) {
     // 提取关键信息：地区、组织
-    $region = isset($metrics['地区']) ? $metrics['地区'] : (isset($metrics['位置']) ? $metrics['位置'] : '');
-    $org = isset($metrics['组织']) ? $metrics['组织'] : (isset($metrics['ASN组织']) ? $metrics['ASN组织'] : '');
-    
     $parts = [];
     foreach ($metrics as $key => $value) {
         $parts[] = "$key: $value";
     }
     $text = implode(' | ', $parts);
     
-    // 绘制背景条
-    $barHeight = 45;
-    $barDraw = new ImagickDraw();
-    $barDraw->setFillColor('#FFFFFF');
-    $barDraw->setStrokeColor('#E0E0E0');
-    $barDraw->setStrokeWidth(1);
-    $barDraw->roundRectangle($x, $y, $x + $width - 50, $y + $barHeight, 8, 8);
-    $image->drawImage($barDraw);
+    $cardHeight = 70;
+    
+    // 绘制卡片背景
+    $cardDraw = new ImagickDraw();
+    $cardDraw->setFillColor('#FFFFFF');
+    $cardDraw->setStrokeColor('#E0E0E0');
+    $cardDraw->setStrokeWidth(1);
+    $cardDraw->roundRectangle($x, $y, $x + $width - 50, $y + $cardHeight, 10, 10);
+    $image->drawImage($cardDraw);
     
     // 顶部色条
-    $barDraw->setFillColor('#66BB6A');
-    $barDraw->rectangle($x + 1, $y + 1, $x + $width - 51, $y + 4);
-    $image->drawImage($barDraw);
+    $cardDraw->setFillColor('#66BB6A');
+    $cardDraw->rectangle($x + 1, $y + 1, $x + $width - 51, $y + 5);
+    $image->drawImage($cardDraw);
     
-    // 文字
+    // 标题
+    $draw->setFillColor('#66BB6A');
+    $draw->setFontSize(13);
+    $draw->setFontWeight(600);
+    $image->annotateImage($draw, $x + 20, $y + 28, 0, "IP信息");
+    
+    // 内容文字
     $draw->setFillColor('#212121');
     $draw->setFontSize(11);
-    $image->annotateImage($draw, $x + 20, $y + 28, 0, $text);
+    $draw->setFontWeight(400);
+    $image->annotateImage($draw, $x + 20, $y + 50, 0, $text);
     
-    return $y + $barHeight + 15;
+    return $y + $cardHeight + 15;
 }
 
 function drawStreamingGrid($image, $draw, $x, $y, $width, $metrics) {
-    // 单行显示所有流媒体服务
+    // 单个大卡片，横向显示所有流媒体服务
     $parts = [];
     foreach ($metrics as $service => $status) {
+        if ($service === '汇总') continue;
         $icon = ($status === '解锁' || $status === '✓') ? '✓' : '✗';
         $parts[] = "$service: $icon";
     }
     $text = implode(' | ', $parts);
     
-    // 绘制背景条
-    $barHeight = 45;
-    $barDraw = new ImagickDraw();
-    $barDraw->setFillColor('#FFFFFF');
-    $barDraw->setStrokeColor('#E0E0E0');
-    $barDraw->setStrokeWidth(1);
-    $barDraw->roundRectangle($x, $y, $x + $width - 50, $y + $barHeight, 8, 8);
-    $image->drawImage($barDraw);
+    $cardHeight = 70;
+    
+    // 绘制卡片背景
+    $cardDraw = new ImagickDraw();
+    $cardDraw->setFillColor('#FFFFFF');
+    $cardDraw->setStrokeColor('#E0E0E0');
+    $cardDraw->setStrokeWidth(1);
+    $cardDraw->roundRectangle($x, $y, $x + $width - 50, $y + $cardHeight, 10, 10);
+    $image->drawImage($cardDraw);
     
     // 顶部色条
-    $barDraw->setFillColor('#AB47BC');
-    $barDraw->rectangle($x + 1, $y + 1, $x + $width - 51, $y + 4);
-    $image->drawImage($barDraw);
+    $cardDraw->setFillColor('#AB47BC');
+    $cardDraw->rectangle($x + 1, $y + 1, $x + $width - 51, $y + 5);
+    $image->drawImage($cardDraw);
     
-    // 文字
+    // 标题
+    $draw->setFillColor('#AB47BC');
+    $draw->setFontSize(13);
+    $draw->setFontWeight(600);
+    $image->annotateImage($draw, $x + 20, $y + 28, 0, "流媒体解锁");
+    
+    // 内容文字
     $draw->setFillColor('#212121');
     $draw->setFontSize(11);
-    $image->annotateImage($draw, $x + 20, $y + 28, 0, $text);
+    $draw->setFontWeight(400);
+    $image->annotateImage($draw, $x + 20, $y + 50, 0, $text);
     
-    return $y + $barHeight + 15;
+    return $y + $cardHeight + 15;
 }
 
 function drawStreamingGridOld($image, $draw, $x, $y, $width, $metrics) {
