@@ -1,24 +1,14 @@
 <?php
 /**
- * VPS测试报告图片生成器 - Imagick版本
- * 使用Imagick生成包含中文的美观图片
+ * VPS测试报告图片生成器 - SVG增强版
+ * 现代化设计，漂亮配色，矢量图形
  */
 
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
-error_log("=== Imagick Image generation started ===");
-error_log("GET: " . print_r($_GET, true));
-
-// 检查Imagick扩展
-if (!extension_loaded('imagick')) {
-    header('Content-Type: text/plain; charset=utf-8');
-    http_response_code(500);
-    die("错误: 需要安装 php-imagick 扩展\n安装: sudo apt-get install php-imagick && sudo systemctl restart php-fpm nginx");
-}
-
 mb_internal_encoding('UTF-8');
-header('Content-Type: image/png');
+header('Content-Type: image/svg+xml; charset=utf-8');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 
 $filePath = basename($_GET['file'] ?? '');
@@ -26,35 +16,29 @@ $year = $_GET['year'] ?? date('Y');
 $month = $_GET['month'] ?? date('m');
 
 if (empty($filePath)) {
-    error_log("ERROR: No file specified");
-    generateErrorImage("错误: 未指定文件");
+    generateErrorSVG("错误: 未指定文件");
     exit;
 }
 
 $fullPath = __DIR__ . "/{$year}/{$month}/{$filePath}";
-error_log("Reading: " . $fullPath);
 
 if (!file_exists($fullPath)) {
-    error_log("ERROR: File not found");
-    generateErrorImage("错误: 文件不存在");
+    generateErrorSVG("错误: 文件不存在");
     exit;
 }
 
 $content = file_get_contents($fullPath);
 if ($content === false) {
-    generateErrorImage("错误: 无法读取文件");
+    generateErrorSVG("错误: 无法读取文件");
     exit;
 }
 
 $data = parseTestResults($content);
-error_log("Parsed " . count($data['sections']) . " sections");
 
 try {
-    generateResultImage($data);
-    error_log("=== Image generated successfully ===");
+    generateSVGImage($data);
 } catch (Exception $e) {
-    error_log("ERROR: " . $e->getMessage());
-    generateErrorImage("生成失败: " . $e->getMessage());
+    generateErrorSVG("生成失败: " . $e->getMessage());
 }
 
 // ============ 解析函数 ============
@@ -106,16 +90,16 @@ function parseYABS($content) {
         $metrics['CPU'] = trim($match[1]);
     }
     if (preg_match('/CPU cores\s*:\s*(\d+)/i', $content, $match)) {
-        $metrics['CPU Cores'] = $match[1];
+        $metrics['核心数'] = $match[1] . ' 核';
     }
     if (preg_match('/RAM\s*:\s*(.+)/i', $content, $match)) {
-        $metrics['Memory'] = trim($match[1]);
+        $metrics['内存'] = trim($match[1]);
     }
     if (preg_match('/Disk\s*:\s*(.+)/i', $content, $match)) {
-        $metrics['Disk'] = trim($match[1]);
+        $metrics['硬盘'] = trim($match[1]);
     }
     if (preg_match('/Total\s*\|\s*(\d+\.?\d*)\s*(MB\/s|GB\/s)/i', $content, $match)) {
-        $metrics['Disk I/O'] = $match[1] . ' ' . $match[2];
+        $metrics['磁盘IO'] = $match[1] . ' ' . $match[2];
     }
     return $metrics;
 }
@@ -129,7 +113,7 @@ function parseIPQuality($content) {
         $metrics['ASN'] = trim($match[1]);
     }
     if (preg_match('/IP2Location[：:]*\s*(\d+)\|(.+)/u', $content, $match)) {
-        $metrics['风险评分'] = $match[1] . ' (' . trim($match[2]) . ')';
+        $metrics['风险评分'] = $match[1];
     }
     return $metrics;
 }
@@ -150,12 +134,6 @@ function parseStreaming($content) {
                 $metrics[$serviceName] = '✗';
             }
         }
-    }
-    
-    $unlocked = count(array_filter($metrics, function($v) { return $v === '✓'; }));
-    $total = count($metrics);
-    if ($total > 0) {
-        $metrics['汇总'] = "$unlocked/$total 解锁";
     }
     
     return $metrics;
@@ -184,7 +162,6 @@ function parseSpeedTest($content) {
         if ($count > 0) {
             $metrics['平均下载'] = round($avgDown / $count, 2) . ' Mbps';
             $metrics['平均上传'] = round($avgUp / $count, 2) . ' Mbps';
-            $metrics['测试节点'] = $count;
         }
     }
     
@@ -202,7 +179,6 @@ function parseResponse($content) {
 function parseRouteTrace($content) {
     $metrics = [];
     
-    // 提取服务器信息（国家、城市、服务商）- 城市可能包含空格
     if (preg_match('/国家:\s*([^\s]+)\s+城市:\s*(.+?)\s+服务商:\s*(.+)/u', $content, $serverMatch)) {
         $metrics['_server_info'] = [
             'country' => trim($serverMatch[1]),
@@ -211,84 +187,106 @@ function parseRouteTrace($content) {
         ];
     }
     
-    // 解析路由线路（新格式：地区 IP 线路 线路类型）
     preg_match_all('/(北京|上海|广州|成都)(电信|联通|移动)\s+([\d\.]+)\s+(\S+)\s+\[([^\]]+)\]/u', $content, $matches, PREG_SET_ORDER);
     
     foreach ($matches as $match) {
         $region = trim($match[1]);
         $isp = trim($match[2]);
-        $ip = trim($match[3]);
-        $routeType = trim($match[4]);
-        $lineQuality = trim($match[5]);
+        $route = trim($match[4]);
+        $quality = trim($match[5]);
         
-        $label = $region . $isp;
-        
-        $metrics[$label] = [
-            'region' => $region,
-            'isp' => $isp,
-            'ip' => $ip,
-            'route' => $routeType,
-            'quality' => $lineQuality
+        $metrics[$region . $isp] = [
+            'route' => $route,
+            'quality' => $quality
         ];
     }
     
     return $metrics;
 }
 
-// ============ 图片生成 ============
+// ============ SVG生成 ============
 
-function generateResultImage($data) {
+function generateSVGImage($data) {
     $width = 1200;
-    $padding = 25;
-    
-    // 创建draw对象
-    $draw = new ImagickDraw();
-    $draw->setTextAntialias(true);  // 启用文本抗锯齿
-    
-    // 查找中文字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-        error_log("Using font: " . $fontFile);
-    } else {
-        error_log("WARNING: No Chinese font found, text may not display correctly");
-    }
-    
-    // 预计算高度
     $sections = $data['sections'];
-    $estimatedHeight = 200; // 标题
-    $estimatedHeight += count($sections['YABS']['metrics'] ?? []) > 0 ? 200 : 0;
-    $estimatedHeight += count($sections['IP质量']['metrics'] ?? []) > 0 ? 200 : 0;
-    $estimatedHeight += count($sections['流媒体']['metrics'] ?? []) > 0 ? 250 : 0;
-    $estimatedHeight += count($sections['多线程测速']['metrics'] ?? []) > 0 ? 200 : 0;
-    $estimatedHeight += count($sections['单线程测速']['metrics'] ?? []) > 0 ? 200 : 0;
-    $estimatedHeight += count($sections['响应']['metrics'] ?? []) > 0 ? 100 : 0;
-    $estimatedHeight += count($sections['回程路由']['metrics'] ?? []) > 0 ? 350 : 0;
-    $estimatedHeight += 100; // 底部
     
-    // 创建图片
-    $image = new Imagick();
-    $image->newImage($width, $estimatedHeight, new ImagickPixel('#F8F9FA'));
-    $image->setImageFormat('png');
+    $estimatedHeight = 150;
+    $estimatedHeight += count($sections['YABS']['metrics'] ?? []) > 0 ? 180 : 0;
+    $estimatedHeight += count($sections['IP质量']['metrics'] ?? []) > 0 ? 150 : 0;
+    $estimatedHeight += count($sections['流媒体']['metrics'] ?? []) > 0 ? 200 : 0;
+    $estimatedHeight += count($sections['多线程测速']['metrics'] ?? []) > 0 ? 160 : 0;
+    $estimatedHeight += count($sections['单线程测速']['metrics'] ?? []) > 0 ? 160 : 0;
+    $estimatedHeight += count($sections['响应']['metrics'] ?? []) > 0 ? 80 : 0;
+    $estimatedHeight += count($sections['回程路由']['metrics'] ?? []) > 0 ? 350 : 0;
+    $estimatedHeight += 100;
+    
+    $svg = [];
+    $svg[] = '<?xml version="1.0" encoding="UTF-8"?>';
+    $svg[] = '<svg xmlns="http://www.w3.org/2000/svg" width="' . $width . '" height="' . $estimatedHeight . '" viewBox="0 0 ' . $width . ' ' . $estimatedHeight . '">';
+    
+    // 定义样式和渐变
+    $svg[] = '<defs>';
+    
+    // 渐变背景
+    $svg[] = '<linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="100%">';
+    $svg[] = '  <stop offset="0%" stop-color="#6366F1"/>';
+    $svg[] = '  <stop offset="100%" stop-color="#8B5CF6"/>';
+    $svg[] = '</linearGradient>';
+    
+    $svg[] = '<linearGradient id="footerGrad" x1="0%" y1="0%" x2="100%" y2="0%">';
+    $svg[] = '  <stop offset="0%" stop-color="#1E293B"/>';
+    $svg[] = '  <stop offset="100%" stop-color="#334155"/>';
+    $svg[] = '</linearGradient>';
+    
+    // 卡片渐变
+    $svg[] = '<linearGradient id="cardBg" x1="0%" y1="0%" x2="0%" y2="100%">';
+    $svg[] = '  <stop offset="0%" stop-color="#FFFFFF"/>';
+    $svg[] = '  <stop offset="100%" stop-color="#F8FAFC"/>';
+    $svg[] = '</linearGradient>';
+    
+    // 阴影
+    $svg[] = '<filter id="shadow">';
+    $svg[] = '  <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.1"/>';
+    $svg[] = '</filter>';
+    
+    $svg[] = '<filter id="glow">';
+    $svg[] = '  <feGaussianBlur stdDeviation="2" result="coloredBlur"/>';
+    $svg[] = '  <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>';
+    $svg[] = '</filter>';
+    
+    // 样式
+    $svg[] = '<style>';
+    $svg[] = '@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap");';
+    $svg[] = '* { font-family: "Inter", -apple-system, sans-serif; }';
+    $svg[] = '.title { font-size: 32px; font-weight: 700; fill: #FFFFFF; letter-spacing: -0.5px; }';
+    $svg[] = '.subtitle { font-size: 14px; font-weight: 500; fill: rgba(255,255,255,0.8); }';
+    $svg[] = '.section-title { font-size: 18px; font-weight: 700; fill: #1E293B; }';
+    $svg[] = '.card-label { font-size: 11px; font-weight: 500; fill: #64748B; text-transform: uppercase; letter-spacing: 0.5px; }';
+    $svg[] = '.card-value { font-size: 14px; font-weight: 600; fill: #1E293B; }';
+    $svg[] = '.emoji { font-size: 20px; }';
+    $svg[] = '</style>';
+    $svg[] = '</defs>';
+    
+    // 背景
+    $svg[] = '<rect width="' . $width . '" height="' . $estimatedHeight . '" fill="#F1F5F9"/>';
     
     $currentY = 0;
+    $padding = 30;
     
-    // 绘制标题
-    $currentY = drawHeader($image, $draw, $width, $data['timestamp']);
-    $currentY += 20;  // 从30减到20
+    // 标题
+    $currentY = drawHeader($svg, $width, $data['timestamp'], $currentY);
+    $currentY += 25;
     
-    // 1. YABS信息
+    // YABS信息
     if (!empty($sections['YABS']['metrics'])) {
-        $currentY = drawSection($image, $draw, $padding, $currentY, $width, 
-                                "📊 系统信息", $sections['YABS']['metrics'], 'info');
-        $currentY += 20;  // 从30减到20
+        $currentY = drawSection($svg, $padding, $currentY, $width, "💻 系统配置", $sections['YABS']['metrics'], 'info');
+        $currentY += 20;
     }
     
-    // 2. IP质量（合并服务器信息）
+    // IP质量
     if (!empty($sections['IP质量']['metrics']) || !empty($sections['回程路由']['metrics']['_server_info'])) {
         $ipMetrics = $sections['IP质量']['metrics'] ?? [];
         
-        // 添加服务器信息到IP质量
         if (!empty($sections['回程路由']['metrics']['_server_info'])) {
             $serverInfo = $sections['回程路由']['metrics']['_server_info'];
             $ipMetrics['国家'] = $serverInfo['country'];
@@ -296,637 +294,325 @@ function generateResultImage($data) {
             $ipMetrics['服务商'] = $serverInfo['provider'];
         }
         
-        $currentY = drawSection($image, $draw, $padding, $currentY, $width,
-                                "🌐 IP质量", $ipMetrics, 'ipquality');
+        $currentY = drawSection($svg, $padding, $currentY, $width, "🌐 网络质量", $ipMetrics, 'ip');
         $currentY += 20;
     }
     
-    // 3. 流媒体
+    // 流媒体
     if (!empty($sections['流媒体']['metrics'])) {
-        $currentY = drawSection($image, $draw, $padding, $currentY, $width,
-                                "🎬 流媒体解锁", $sections['流媒体']['metrics'], 'grid');
-        $currentY += 20;  // 从30减到20
-    }
-    
-    // 4. 测速（多线程和单线程合并）
-    if (!empty($sections['多线程测速']['metrics']) || !empty($sections['单线程测速']['metrics'])) {
-        $currentY = drawDualSpeedTest($image, $draw, $padding, $currentY, $width,
-                                      $sections['多线程测速']['metrics'] ?? [],
-                                      $sections['单线程测速']['metrics'] ?? []);
+        $currentY = drawSection($svg, $padding, $currentY, $width, "🎬 流媒体解锁", $sections['流媒体']['metrics'], 'streaming');
         $currentY += 20;
     }
     
-    // 6. 响应测试
+    // 测速
+    if (!empty($sections['多线程测速']['metrics']) || !empty($sections['单线程测速']['metrics'])) {
+        $currentY = drawSpeedTest($svg, $padding, $currentY, $width,
+                                  $sections['多线程测速']['metrics'] ?? [],
+                                  $sections['单线程测速']['metrics'] ?? []);
+        $currentY += 20;
+    }
+    
+    // 响应
     if (!empty($sections['响应']['metrics'])) {
-        $currentY = drawSection($image, $draw, $padding, $currentY, $width,
-                                "⚡ 响应测试", $sections['响应']['metrics'], 'list');
-        $currentY += 20;  // 从30减到20
+        $currentY = drawSection($svg, $padding, $currentY, $width, "⚡ 响应测试", $sections['响应']['metrics'], 'response');
+        $currentY += 20;
     }
     
-    // 7. 回程路由
+    // 回程路由
     if (!empty($sections['回程路由']['metrics'])) {
-        // 计算实际路由数量（排除_server_info）
-        $routeCount = count(array_filter(array_keys($sections['回程路由']['metrics']), function($k) {
-            return $k !== '_server_info';
-        }));
-        $currentY = drawSection($image, $draw, $padding, $currentY, $width,
-                                "🔄 回程路由 ({$routeCount}条)", $sections['回程路由']['metrics'], 'routes');
-        $currentY += 20;  // 从30减到20
+        $routeCount = count(array_filter(array_keys($sections['回程路由']['metrics']), fn($k) => $k !== '_server_info'));
+        $currentY = drawSection($svg, $padding, $currentY, $width, "🔄 回程路由 ({$routeCount})", $sections['回程路由']['metrics'], 'routes');
+        $currentY += 20;
     }
     
-    // 裁剪到实际高度
-    $finalHeight = $currentY + 80;
+    // 底部
+    drawFooter($svg, $width, $currentY + 30);
     
-    // 不创建新图像，直接裁剪现有图像
-    $image->cropImage($width, $finalHeight, 0, 0);
-    $image->setImagePage($width, $finalHeight, 0, 0);
-    
-    // 绘制底部（现在直接在$image上绘制）
-    drawFooter($image, $draw, $width, $finalHeight);
-    
-    // 输出
-    echo $image->getImageBlob();
-    $image->destroy();
+    $svg[] = '</svg>';
+    echo implode("\n", $svg);
 }
 
-function drawHeader($image, $draw, $width, $timestamp) {
-    $headerHeight = 90;
+function drawHeader(&$svg, $width, $timestamp, $y) {
+    $h = 100;
     
-    // 创建一个临时的draw对象用于绘制所有元素
-    $headerDraw = new ImagickDraw();
+    // 渐变背景
+    $svg[] = '<rect y="' . $y . '" width="' . $width . '" height="' . $h . '" fill="url(#headerGrad)" filter="url(#shadow)"/>';
     
-    // 设置字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $headerDraw->setFont($fontFile);
-    }
-    $headerDraw->setTextAntialias(true);
+    // 装饰元素
+    $svg[] = '<circle cx="' . ($width - 50) . '" cy="' . ($y + 50) . '" r="80" fill="#FFFFFF" opacity="0.05"/>';
+    $svg[] = '<circle cx="50" cy="' . ($y + 80) . '" r="60" fill="#FFFFFF" opacity="0.05"/>';
     
-    // 1. 先画背景矩形
-    $headerDraw->setFillColor('#1A73E8');
-    $headerDraw->rectangle(0, 0, $width, $headerHeight);
+    // 标题
+    $svg[] = '<text x="40" y="' . ($y + 45) . '" class="title">VPS Performance Report</text>';
+    $svg[] = '<text x="40" y="' . ($y + 70) . '" class="subtitle">Generated: ' . htmlspecialchars($timestamp) . '</text>';
     
-    // 2. 画装饰圆圈
-    $headerDraw->setFillColor('#FFA726');
-    $headerDraw->circle($width - 60, 40, $width - 40, 40);
-    
-    // 3. 画标题文字
-    $headerDraw->setFillColor('#FFFFFF');
-    $headerDraw->setFontSize(28);
-    $headerDraw->setFontWeight(700);
-    $headerDraw->annotation(75, 40, "VPS Performance Test Report");
-    
-    // 4. 画副标题
-    $headerDraw->setFontSize(14);
-    $headerDraw->setFontWeight(400);
-    $headerDraw->annotation(75, 65, "Generated: " . $timestamp);
-    
-    // 一次性绘制所有元素
-    $image->drawImage($headerDraw);
-    error_log("[drawHeader] Header drawn with all elements");
-    
-    return $headerHeight;
+    return $y + $h;
 }
 
-function drawSection($image, $draw, $x, $y, $width, $title, $metrics, $type) {
-    // 设置字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
-    $draw->setTextAntialias(true);  // 确保抗锯齿启用
-    
-    // 绘制section标题
-    $draw->setFillColor('#1A73E8');
-    $draw->setFontSize(18);
-    $draw->setFontWeight(700);
-    $image->annotateImage($draw, $x, $y + 18, 0, $title);
-    
-    $y += 32;  // 从40减到32
+function drawSection(&$svg, $x, $y, $width, $title, $metrics, $type) {
+    $svg[] = '<text x="' . $x . '" y="' . ($y + 22) . '" class="section-title">' . htmlspecialchars($title) . '</text>';
+    $y += 35;
     
     switch ($type) {
         case 'info':
-            return drawInfoCards($image, $draw, $x, $y, $width, $metrics);
-        case 'ipquality':
-            return drawIPQualitySingle($image, $draw, $x, $y, $width, $metrics);
-        case 'grid':
-            return drawStreamingGrid($image, $draw, $x, $y, $width, $metrics);
-        case 'bar':
-            return drawBarChart($image, $draw, $x, $y, $width, $metrics);
-        case 'list':
-            return drawList($image, $draw, $x, $y, $metrics);
+            return drawInfoCards($svg, $x, $y, $metrics);
+        case 'ip':
+            return drawIPCards($svg, $x, $y, $metrics);
+        case 'streaming':
+            return drawStreamingCards($svg, $x, $y, $metrics);
+        case 'response':
+            return drawResponseCard($svg, $x, $y, $metrics);
         case 'routes':
-            return drawRouteGrid($image, $draw, $x, $y, $width, $metrics);
+            return drawRouteCards($svg, $x, $y, $metrics);
     }
     
     return $y;
 }
 
-function drawInfoCards($image, $draw, $x, $y, $width, $metrics) {
-    // 多个小卡片，每行5个
-    $cardWidth = 220;
-    $cardHeight = 70;
-    $spacing = 10;
+function drawInfoCards(&$svg, $x, $y, $metrics) {
+    $w = 220;
+    $h = 80;
+    $gap = 12;
     $cols = 5;
     $col = 0;
-    $currentX = $x;
-    $currentY = $y;
+    $cx = $x;
+    $cy = $y;
     
     foreach ($metrics as $key => $value) {
-        // 绘制卡片背景
-        $cardDraw = new ImagickDraw();
-        $cardDraw->setFillColor('#FFFFFF');
-        $cardDraw->setStrokeColor('#E0E0E0');
-        $cardDraw->setStrokeWidth(1);
-        $cardDraw->roundRectangle($currentX, $currentY, $currentX + $cardWidth, $currentY + $cardHeight, 8, 8);
-        $image->drawImage($cardDraw);
+        // 卡片
+        $svg[] = '<g filter="url(#shadow)">';
+        $svg[] = '<rect x="' . $cx . '" y="' . $cy . '" width="' . $w . '" height="' . $h . '" rx="12" fill="url(#cardBg)"/>';
+        $svg[] = '<rect x="' . $cx . '" y="' . $cy . '" width="' . $w . '" height="4" rx="12 12 0 0" fill="#6366F1"/>';
+        $svg[] = '</g>';
         
-        // 顶部色条
-        $cardDraw->setFillColor('#42A5F5');
-        $cardDraw->rectangle($currentX + 1, $currentY + 1, $currentX + $cardWidth - 1, $currentY + 4);
-        $image->drawImage($cardDraw);
+        // 文本
+        $svg[] = '<text x="' . ($cx + 16) . '" y="' . ($cy + 32) . '" class="card-label">' . htmlspecialchars($key) . '</text>';
         
-        // 标题
-        $draw->setFillColor('#757575');
-        $draw->setFontSize(11);
-        $image->annotateImage($draw, $currentX + 12, $currentY + 25, 0, $key);
-        
-        // 数值 - 自动截断过长文本
-        $displayValue = mb_strlen($value) > 28 ? mb_substr($value, 0, 25) . '...' : $value;
-        $draw->setFillColor('#212121');
-        $draw->setFontSize(13);
-        $image->annotateImage($draw, $currentX + 12, $currentY + 48, 0, $displayValue);
+        $displayValue = mb_strlen($value) > 26 ? mb_substr($value, 0, 23) . '...' : $value;
+        $svg[] = '<text x="' . ($cx + 16) . '" y="' . ($cy + 56) . '" class="card-value">' . htmlspecialchars($displayValue) . '</text>';
         
         $col++;
         if ($col >= $cols) {
             $col = 0;
-            $currentX = $x;
-            $currentY += $cardHeight + $spacing;
+            $cx = $x;
+            $cy += $h + $gap;
         } else {
-            $currentX += $cardWidth + $spacing;
+            $cx += $w + $gap;
         }
     }
     
-    if ($col > 0) {
-        $currentY += $cardHeight + $spacing;
-    }
-    
-    return $currentY;
+    if ($col > 0) $cy += $h + $gap;
+    return $cy;
 }
 
-function drawIPQualitySingle($image, $draw, $x, $y, $width, $metrics) {
-    // 多个小卡片显示，6列布局
-    $cardWidth = 185;
-    $cardHeight = 70;
-    $spacing = 10;
+function drawIPCards(&$svg, $x, $y, $metrics) {
+    $w = 185;
+    $h = 80;
+    $gap = 10;
     $cols = 6;
     $col = 0;
-    $currentX = $x;
-    $currentY = $y;
+    $cx = $x;
+    $cy = $y;
     
     foreach ($metrics as $key => $value) {
-        // 绘制卡片背景
-        $cardDraw = new ImagickDraw();
-        $cardDraw->setFillColor('#FFFFFF');
-        $cardDraw->setStrokeColor('#E0E0E0');
-        $cardDraw->setStrokeWidth(1);
-        $cardDraw->roundRectangle($currentX, $currentY, $currentX + $cardWidth, $currentY + $cardHeight, 8, 8);
-        $image->drawImage($cardDraw);
+        $svg[] = '<g filter="url(#shadow)">';
+        $svg[] = '<rect x="' . $cx . '" y="' . $cy . '" width="' . $w . '" height="' . $h . '" rx="12" fill="url(#cardBg)"/>';
+        $svg[] = '<rect x="' . $cx . '" y="' . $cy . '" width="' . $w . '" height="4" rx="12 12 0 0" fill="#10B981"/>';
+        $svg[] = '</g>';
         
-        // 顶部色条
-        $cardDraw->setFillColor('#66BB6A');
-        $cardDraw->rectangle($currentX + 1, $currentY + 1, $currentX + $cardWidth - 1, $currentY + 4);
-        $image->drawImage($cardDraw);
+        $svg[] = '<text x="' . ($cx + 14) . '" y="' . ($cy + 30) . '" class="card-label">' . htmlspecialchars($key) . '</text>';
         
-        // 标题
-        $draw->setFillColor('#757575');
-        $draw->setFontSize(11);
-        $image->annotateImage($draw, $currentX + 12, $currentY + 25, 0, $key);
-        
-        // 数值
-        $displayValue = mb_strlen($value) > 35 ? mb_substr($value, 0, 32) . '...' : $value;
-        $draw->setFillColor('#212121');
-        $draw->setFontSize(13);
-        $image->annotateImage($draw, $currentX + 12, $currentY + 48, 0, $displayValue);
+        $displayValue = mb_strlen($value) > 20 ? mb_substr($value, 0, 17) . '...' : $value;
+        $svg[] = '<text x="' . ($cx + 14) . '" y="' . ($cy + 54) . '" class="card-value">' . htmlspecialchars($displayValue) . '</text>';
         
         $col++;
         if ($col >= $cols) {
             $col = 0;
-            $currentX = $x;
-            $currentY += $cardHeight + $spacing;
+            $cx = $x;
+            $cy += $h + $gap;
         } else {
-            $currentX += $cardWidth + $spacing;
+            $cx += $w + $gap;
         }
     }
     
-    if ($col > 0) {
-        $currentY += $cardHeight + $spacing;
-    }
-    
-    return $currentY;
+    if ($col > 0) $cy += $h + $gap;
+    return $cy;
 }
 
-function drawStreamingGrid($image, $draw, $x, $y, $width, $metrics) {
-    // 多个小卡片，每行6个
-    $cardWidth = 185;
-    $cardHeight = 60;
-    $spacing = 8;
+function drawStreamingCards(&$svg, $x, $y, $metrics) {
+    $w = 185;
+    $h = 70;
+    $gap = 10;
     $cols = 6;
     $col = 0;
-    $currentX = $x;
-    $currentY = $y;
+    $cx = $x;
+    $cy = $y;
     
     foreach ($metrics as $service => $status) {
-        if ($service === '汇总') continue;
-        
-        $isSuccess = ($status === '✓' || $status === '解锁');
-        $bgColor = $isSuccess ? '#E8F5E9' : '#FFEBEE';
-        $iconColor = $isSuccess ? '#4CAF50' : '#F44336';
+        $isSuccess = ($status === '✓');
+        $bgColor = $isSuccess ? '#ECFDF5' : '#FEF2F2';
+        $accentColor = $isSuccess ? '#10B981' : '#EF4444';
         $icon = $isSuccess ? '✓' : '✗';
         
-        // 绘制卡片背景
-        $cardDraw = new ImagickDraw();
-        $cardDraw->setFillColor($bgColor);
-        $cardDraw->setStrokeColor('#E0E0E0');
-        $cardDraw->setStrokeWidth(1);
-        $cardDraw->roundRectangle($currentX, $currentY, $currentX + $cardWidth, $currentY + $cardHeight, 8, 8);
-        $image->drawImage($cardDraw);
+        $svg[] = '<g filter="url(#shadow)">';
+        $svg[] = '<rect x="' . $cx . '" y="' . $cy . '" width="' . $w . '" height="' . $h . '" rx="12" fill="' . $bgColor . '"/>';
+        $svg[] = '<rect x="' . $cx . '" y="' . $cy . '" width="' . $w . '" height="4" rx="12 12 0 0" fill="' . $accentColor . '"/>';
+        $svg[] = '</g>';
         
         // 图标
-        $draw->setFillColor($iconColor);
-        $draw->setFontSize(22);
-        $image->annotateImage($draw, $currentX + 15, $currentY + 38, 0, $icon);
+        $svg[] = '<circle cx="' . ($cx + 25) . '" cy="' . ($cy + 42) . '" r="14" fill="' . $accentColor . '" opacity="0.15"/>';
+        $svg[] = '<text x="' . ($cx + 18) . '" y="' . ($cy + 50) . '" style="font-size: 20px; font-weight: 700; fill: ' . $accentColor . ';">' . $icon . '</text>';
         
-        // 服务名
-        $draw->setFillColor('#212121');
-        $draw->setFontSize(13);
-        $image->annotateImage($draw, $currentX + 45, $currentY + 38, 0, $service);
+        $svg[] = '<text x="' . ($cx + 45) . '" y="' . ($cy + 48) . '" style="font-size: 13px; font-weight: 600; fill: #1E293B;">' . htmlspecialchars($service) . '</text>';
         
         $col++;
         if ($col >= $cols) {
             $col = 0;
-            $currentX = $x;
-            $currentY += $cardHeight + $spacing;
+            $cx = $x;
+            $cy += $h + $gap;
         } else {
-            $currentX += $cardWidth + $spacing;
+            $cx += $w + $gap;
         }
     }
     
-    if ($col > 0) {
-        $currentY += $cardHeight + $spacing;
-    }
-    
-    return $currentY;
+    if ($col > 0) $cy += $h + $gap;
+    return $cy;
 }
 
-function drawStreamingGridOld($image, $draw, $x, $y, $width, $metrics) {
-    $itemWidth = 180;
-    $itemHeight = 42;
-    $cols = 3;
-    $spacing = 12;
-    $col = 0;
-    $currentX = $x;
-    $currentY = $y;
-    
-    foreach ($metrics as $service => $status) {
-        if ($service === '汇总') continue;
-        
-        $isSuccess = ($status === '✓');
-        $bgColor = $isSuccess ? '#E8F5E9' : '#FFEBEE';
-        $textColor = $isSuccess ? '#4CAF50' : '#F44336';
-        
-        // 绘制卡片
-        $cardDraw = new ImagickDraw();
-        $cardDraw->setFillColor($bgColor);
-        $cardDraw->setStrokeColor('#E0E0E0');
-        $cardDraw->setStrokeWidth(1);
-        $cardDraw->roundRectangle($currentX, $currentY, $currentX + $itemWidth, $currentY + $itemHeight, 8, 8);
-        $image->drawImage($cardDraw);
-        
-        // 图标
-        $draw->setFillColor($textColor);
-        $draw->setFontSize(18);  // 从20减到18
-        $image->annotateImage($draw, $currentX + 15, $currentY + 28, 0, $status);
-        
-        // 服务名
-        $draw->setFillColor('#212121');
-        $draw->setFontSize(11);  // 从12减到11
-        $image->annotateImage($draw, $currentX + 50, $currentY + 28, 0, $service);
-        
-        $col++;
-        if ($col >= $cols) {
-            $col = 0;
-            $currentX = $x;
-            $currentY += $itemHeight + $spacing;
-        } else {
-            $currentX += $itemWidth + $spacing;
-        }
-    }
-    
-    if ($col > 0) {
-        $currentY += $itemHeight + $spacing;
-    }
-    
-    return $currentY;
-}
-
-function drawBarChart($image, $draw, $x, $y, $width, $metrics) {
-    $barHeight = 30;  // 从35减到30
-    $spacing = 12;  // 从15减到12
-    $currentY = $y;
-    
-    // 找最大值
-    $maxValue = 0;
-    foreach ($metrics as $key => $value) {
-        if ($key === '平均下载' || $key === '平均上传') {
-            $numValue = floatval(preg_replace('/[^0-9.]/', '', $value));
-            if ($numValue > $maxValue) $maxValue = $numValue;
-        }
-    }
-    
-    if ($maxValue == 0) $maxValue = 100;
-    
-    foreach ($metrics as $key => $value) {
-        if ($key !== '平均下载' && $key !== '平均上传') continue;
-        
-        // 背景
-        $cardDraw = new ImagickDraw();
-        $cardDraw->setFillColor('#FFFFFF');
-        $cardDraw->setStrokeColor('#E0E0E0');
-        $cardDraw->setStrokeWidth(1);
-        $cardDraw->roundRectangle($x, $currentY, $x + $width - 50, $currentY + $barHeight, 6, 6);
-        $image->drawImage($cardDraw);
-        
-        // 标签
-        $draw->setFillColor('#212121');
-        $draw->setFontSize(12);
-        $image->annotateImage($draw, $x + 15, $currentY + 22, 0, $key);
-        
-        // 条形
-        $numValue = floatval(preg_replace('/[^0-9.]/', '', $value));
-        $barWidth = ($numValue / $maxValue) * ($width - 300);
-        
-        $barDraw = new ImagickDraw();
-        $barDraw->setFillColor('#42A5F5');
-        $barDraw->roundRectangle($x + 120, $currentY + 8, $x + 120 + $barWidth, $currentY + $barHeight - 8, 4, 4);
-        $image->drawImage($barDraw);
-        
-        // 数值
-        $draw->setFillColor('#212121');
-        $draw->setFontSize(12);
-        $image->annotateImage($draw, $x + 130 + $barWidth, $currentY + 22, 0, $value);
-        
-        $currentY += $barHeight + $spacing;
-    }
-    
-    return $currentY + 10;
-}
-
-function drawList($image, $draw, $x, $y, $metrics) {
-    $currentY = $y;
-    
-    foreach ($metrics as $key => $value) {
-        $draw->setFillColor('#212121');
-        $draw->setFontSize(13);
-        $image->annotateImage($draw, $x + 20, $currentY + 20, 0, "$key: $value");
-        $currentY += 30;
-    }
-    
-    return $currentY;
-}
-
-// 新增：左右布局显示双测速
-function drawDualSpeedTest($image, $draw, $x, $y, $width, $multiMetrics, $singleMetrics) {
-    // 设置字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
-    
-    // 绘制标题
-    $draw->setFillColor('#1A73E8');
-    $draw->setFontSize(16);
-    $draw->setFontWeight(700);
-    $image->annotateImage($draw, $x, $y + 18, 0, "🚀 测速结果");
-    
+function drawSpeedTest(&$svg, $x, $y, $width, $multi, $single) {
+    $svg[] = '<text x="' . $x . '" y="' . ($y + 22) . '" class="section-title">🚀 网络测速</text>';
     $y += 35;
-    $halfWidth = floor(($width - 50 - 30) / 2);  // 减去padding，分成两半，中间留30px间距
     
-    $leftY = $y;
-    $rightY = $y;
+    $halfW = floor(($width - 60 - 30) / 2);
     
-    // 左侧：多线程
-    if (!empty($multiMetrics)) {
-        $draw->setFillColor('#757575');
-        $draw->setFontSize(13);
-        $draw->setFontWeight(600);
-        $image->annotateImage($draw, $x, $y + 15, 0, "多线程");
-        $leftY = drawBarChartCompact($image, $draw, $x, $y + 30, $halfWidth, $multiMetrics);
+    if (!empty($multi)) {
+        $svg[] = '<text x="' . $x . '" y="' . ($y + 18) . '" style="font-size: 14px; font-weight: 600; fill: #64748B;">多线程</text>';
+        $leftY = drawSpeedBars($svg, $x, $y + 30, $halfW, $multi);
     }
     
-    // 右侧：单线程
-    if (!empty($singleMetrics)) {
-        $draw->setFillColor('#757575');
-        $draw->setFontSize(13);
-        $draw->setFontWeight(600);
-        $image->annotateImage($draw, $x + $halfWidth + 30, $y + 15, 0, "单线程");
-        $rightY = drawBarChartCompact($image, $draw, $x + $halfWidth + 30, $y + 30, $halfWidth, $singleMetrics);
+    if (!empty($single)) {
+        $svg[] = '<text x="' . ($x + $halfW + 30) . '" y="' . ($y + 18) . '" style="font-size: 14px; font-weight: 600; fill: #64748B;">单线程</text>';
+        $rightY = drawSpeedBars($svg, $x + $halfW + 30, $y + 30, $halfW, $single);
     }
     
-    // 返回最大高度
-    $maxY = max($leftY, $rightY);
-    return $maxY + 10;
+    return max($leftY ?? $y, $rightY ?? $y) + 15;
 }
 
-// 紧凑版条形图
-function drawBarChartCompact($image, $draw, $x, $y, $width, $metrics) {
-    $barHeight = 25;
-    $spacing = 8;
-    $currentY = $y;
+function drawSpeedBars(&$svg, $x, $y, $w, $metrics) {
+    $bh = 32;
+    $gap = 10;
+    $cy = $y;
     
     foreach ($metrics as $key => $value) {
         if ($key !== '平均下载' && $key !== '平均上传') continue;
         
-        // 解析数值
-        preg_match('/(\d+\.?\d*)\s*([MGT]?)(b|B)?/i', $value, $matches);
-        $numValue = isset($matches[1]) ? floatval($matches[1]) : 0;
-        $unit = isset($matches[2]) ? $matches[2] : '';
+        preg_match('/(\d+\.?\d*)/', $value, $match);
+        $numValue = isset($match[1]) ? floatval($match[1]) : 0;
         
-        // 归一化到Mbps
-        if ($unit === 'G' || $unit === 'g') $numValue *= 1000;
-        if ($unit === 'K' || $unit === 'k') $numValue /= 1000;
+        $barW = min(($numValue / 1000) * ($w - 150), $w - 150);
+        if ($barW < 10) $barW = 10;
         
-        $barWidth = min(($numValue / 1000) * ($width - 200), $width - 200);
-        if ($barWidth < 10) $barWidth = 10;
+        // 背景条
+        $svg[] = '<rect x="' . ($x + 90) . '" y="' . $cy . '" width="' . ($w - 150) . '" height="' . $bh . '" rx="6" fill="#F1F5F9"/>';
         
-        // 绘制条形背景
-        $barDraw = new ImagickDraw();
-        $barDraw->setFillColor('#E3F2FD');
-        $barDraw->roundRectangle($x + 80, $currentY, $x + 80 + $barWidth, $currentY + $barHeight, 4, 4);
-        $image->drawImage($barDraw);
+        // 渐变条
+        $isDown = (strpos($key, '下载') !== false);
+        $color = $isDown ? '#6366F1' : '#8B5CF6';
+        $svg[] = '<rect x="' . ($x + 90) . '" y="' . $cy . '" width="' . $barW . '" height="' . $bh . '" rx="6" fill="' . $color . '" filter="url(#glow)"/>';
         
-        // 标签
-        $draw->setFillColor('#212121');
-        $draw->setFontSize(11);
-        $draw->setFontWeight(400);
-        $labelText = str_replace('平均', '', $key);
-        $image->annotateImage($draw, $x + 5, $currentY + 17, 0, $labelText);
+        $label = str_replace('平均', '', $key);
+        $svg[] = '<text x="' . ($x + 5) . '" y="' . ($cy + 21) . '" style="font-size: 12px; font-weight: 500; fill: #64748B;">' . htmlspecialchars($label) . '</text>';
+        $svg[] = '<text x="' . ($x + 100) . '" y="' . ($cy + 21) . '" style="font-size: 12px; font-weight: 700; fill: #FFFFFF;">' . htmlspecialchars($value) . '</text>';
         
-        // 数值
-        $draw->setFillColor('#1976D2');
-        $draw->setFontSize(11);
-        $draw->setFontWeight(700);
-        $image->annotateImage($draw, $x + 85, $currentY + 17, 0, $value);
-        
-        $currentY += $barHeight + $spacing;
+        $cy += $bh + $gap;
     }
     
-    return $currentY;
+    return $cy;
 }
 
-function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
-    $itemWidth = 280;
-    $itemHeight = 85;
-    $cols = 4;
-    $spacing = 10;
-    $col = 0;
-    $currentX = $x;
-    $currentY = $y;
+function drawResponseCard(&$svg, $x, $y, $metrics) {
+    $cy = $y;
     
-    foreach ($metrics as $label => $routeData) {
-        // 跳过服务器信息（已在IP质量中显示）
+    foreach ($metrics as $key => $value) {
+        $svg[] = '<g filter="url(#shadow)">';
+        $svg[] = '<rect x="' . $x . '" y="' . $cy . '" width="300" height="70" rx="12" fill="url(#cardBg)"/>';
+        $svg[] = '<rect x="' . $x . '" y="' . $cy . '" width="300" height="4" rx="12 12 0 0" fill="#F59E0B"/>';
+        $svg[] = '</g>';
+        
+        $svg[] = '<text x="' . ($x + 16) . '" y="' . ($cy + 30) . '" class="card-label">' . htmlspecialchars($key) . '</text>';
+        $svg[] = '<text x="' . ($x + 16) . '" y="' . ($cy + 54) . '" class="card-value" style="font-size: 18px;">' . htmlspecialchars($value) . '</text>';
+        
+        $cy += 85;
+    }
+    
+    return $cy;
+}
+
+function drawRouteCards(&$svg, $x, $y, $metrics) {
+    $w = 280;
+    $h = 90;
+    $gap = 12;
+    $cols = 4;
+    $col = 0;
+    $cx = $x;
+    $cy = $y;
+    
+    foreach ($metrics as $label => $data) {
         if ($label === '_server_info') continue;
+        if (!is_array($data)) continue;
         
-        // 解析路由数据
-        if (!is_array($routeData)) continue;
+        $route = $data['route'] ?? '';
+        $quality = $data['quality'] ?? '普通线路';
+        $isHQ = (strpos($quality, '优质') !== false);
         
-        $region = $routeData['region'] ?? '';
-        $isp = $routeData['isp'] ?? '';
-        $route = $routeData['route'] ?? '';
-        $quality = $routeData['quality'] ?? '普通线路';
-        
-        // 根据线路质量确定颜色
-        $isHighQuality = (strpos($quality, '优质') !== false);
-        
-        // ISP颜色
-        if (strpos($isp, '电信') !== false) {
-            $ispColor = $isHighQuality ? '#1976D2' : '#42A5F5';  // 优质深蓝，普通浅蓝
-        } elseif (strpos($isp, '联通') !== false) {
-            $ispColor = $isHighQuality ? '#388E3C' : '#66BB6A';  // 优质深绿，普通浅绿
-        } elseif (strpos($isp, '移动') !== false) {
-            $ispColor = $isHighQuality ? '#F57C00' : '#FFA726';  // 优质深橙，普通浅橙
+        // 运营商颜色
+        if (strpos($label, '电信') !== false) {
+            $color = $isHQ ? '#2563EB' : '#60A5FA';
+        } elseif (strpos($label, '联通') !== false) {
+            $color = $isHQ ? '#059669' : '#10B981';
+        } elseif (strpos($label, '移动') !== false) {
+            $color = $isHQ ? '#DC2626' : '#F87171';
         } else {
-            $ispColor = '#757575';
+            $color = '#64748B';
         }
         
-        // 背景色（优质线路用淡色背景）
-        $bgColor = $isHighQuality ? '#F1F8E9' : '#FFFFFF';
+        $svg[] = '<g filter="url(#shadow)">';
+        $svg[] = '<rect x="' . $cx . '" y="' . $cy . '" width="' . $w . '" height="' . $h . '" rx="12" fill="url(#cardBg)" stroke="' . $color . '" stroke-width="' . ($isHQ ? '2' : '1') . '"/>';
+        $svg[] = '<rect x="' . $cx . '" y="' . $cy . '" width="' . $w . '" height="4" rx="12 12 0 0" fill="' . $color . '"/>';
+        $svg[] = '</g>';
         
-        // 绘制卡片
-        $cardDraw = new ImagickDraw();
-        $cardDraw->setFillColor($bgColor);
-        $cardDraw->setStrokeColor($isHighQuality ? $ispColor : '#E0E0E0');
-        $cardDraw->setStrokeWidth($isHighQuality ? 2 : 1);
-        $cardDraw->roundRectangle($currentX, $currentY, $currentX + $itemWidth, $currentY + $itemHeight, 8, 8);
-        $image->drawImage($cardDraw);
+        $svg[] = '<text x="' . ($cx + 16) . '" y="' . ($cy + 32) . '" style="font-size: 14px; font-weight: 700; fill: ' . $color . ';">' . htmlspecialchars($label) . '</text>';
+        $svg[] = '<text x="' . ($cx + 16) . '" y="' . ($cy + 54) . '" style="font-size: 12px; font-weight: 600; fill: #1E293B;">' . htmlspecialchars($route) . '</text>';
         
-        // 顶部色条
-        $cardDraw->setFillColor($ispColor);
-        $cardDraw->rectangle($currentX + 1, $currentY + 1, $currentX + $itemWidth - 1, $currentY + 5);
-        $image->drawImage($cardDraw);
-        
-        // 地区+ISP标签
-        $draw->setFillColor($ispColor);
-        $draw->setFontSize(13);
-        $draw->setFontWeight(700);
-        $image->annotateImage($draw, $currentX + 15, $currentY + 28, 0, $label);
-        
-        // 线路类型
-        $draw->setFillColor('#212121');
-        $draw->setFontSize(11);
-        $draw->setFontWeight(600);
-        $image->annotateImage($draw, $currentX + 15, $currentY + 48, 0, $route);
-        
-        // 线路质量标签
-        $draw->setFillColor($isHighQuality ? '#558B2F' : '#757575');
-        $draw->setFontSize(10);
-        $draw->setFontWeight(400);
-        $image->annotateImage($draw, $currentX + 15, $currentY + 68, 0, $quality);
+        $qualityColor = $isHQ ? '#059669' : '#64748B';
+        $svg[] = '<text x="' . ($cx + 16) . '" y="' . ($cy + 72) . '" style="font-size: 11px; font-weight: 500; fill: ' . $qualityColor . ';">' . htmlspecialchars($quality) . '</text>';
         
         $col++;
         if ($col >= $cols) {
             $col = 0;
-            $currentX = $x;
-            $currentY += $itemHeight + $spacing;
+            $cx = $x;
+            $cy += $h + $gap;
         } else {
-            $currentX += $itemWidth + $spacing;
+            $cx += $w + $gap;
         }
     }
     
-    if ($col > 0) {
-        $currentY += $itemHeight + $spacing;
-    }
-    
-    return $currentY;
+    if ($col > 0) $cy += $h + $gap;
+    return $cy;
 }
 
-function drawFooter($image, $draw, $width, $height) {
-    $footerY = $height - 40;  // 从50减到40
+function drawFooter(&$svg, $width, $y) {
+    $h = 60;
     
-    // 设置字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
-    
-    // 底部背景
-    $footerDraw = new ImagickDraw();
-    $footerDraw->setFillColor('#0D47A1');
-    $footerDraw->rectangle(0, $footerY, $width, $height);
-    $image->drawImage($footerDraw);
-    
-    // 水印
-    $draw->setFillColor('#FFFFFF');
-    $draw->setFontSize(11);
-    $image->annotateImage($draw, 25, $footerY + 25, 0, "Powered by bench.nodeloc.cc");
-    $image->annotateImage($draw, $width - 150, $footerY + 25, 0, "NodeLoc.com");
+    $svg[] = '<rect y="' . $y . '" width="' . $width . '" height="' . $h . '" fill="url(#footerGrad)"/>';
+    $svg[] = '<text x="30" y="' . ($y + 35) . '" style="font-size: 12px; font-weight: 500; fill: rgba(255,255,255,0.8);">Powered by bench.nodeloc.cc</text>';
+    $svg[] = '<text x="' . ($width - 150) . '" y="' . ($y + 35) . '" style="font-size: 12px; font-weight: 500; fill: rgba(255,255,255,0.8);">NodeLoc.com</text>';
 }
 
-function findChineseFont() {
-    $fonts = [
-        '/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc',
-        '/usr/share/fonts/truetype/wqy/wqy-microhei.ttc',
-        '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
-        '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttf',
-        __DIR__ . '/fonts/wqy-zenhei.ttc',
-        __DIR__ . '/fonts/NotoSansCJK-Regular.ttf',
-    ];
-    
-    foreach ($fonts as $font) {
-        if (file_exists($font)) {
-            return $font;
-        }
-    }
-    
-    return null;
-}
-
-function generateErrorImage($message) {
-    try {
-        $image = new Imagick();
-        $image->newImage(650, 250, new ImagickPixel('#F8F9FA'));
-        $image->setImageFormat('png');
-        
-        $draw = new ImagickDraw();
-        $draw->setFillColor('#D32F2F');
-        $draw->setFontSize(18);
-        $draw->annotation(50, 120, $message);
-        
-        $image->drawImage($draw);
-        echo $image->getImageBlob();
-        $image->destroy();
-    } catch (Exception $e) {
-        header('Content-Type: text/plain');
-        echo "错误: " . $message;
-    }
+function generateErrorSVG($message) {
+    echo '<?xml version="1.0" encoding="UTF-8"?>';
+    echo '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="200">';
+    echo '<rect width="600" height="200" fill="#FEF2F2"/>';
+    echo '<text x="30" y="100" style="font-size: 18px; fill: #DC2626;">' . htmlspecialchars($message) . '</text>';
+    echo '</svg>';
 }
