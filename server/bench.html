@@ -576,65 +576,27 @@
             btn.disabled = true;
             
             try {
-                // 检查剪贴板权限
-                const permission = await navigator.permissions.query({ name: 'clipboard-write' });
-                if (permission.state === 'denied') {
-                    throw new Error('Clipboard permission denied');
+                // 直接获取PNG格式
+                let pngUrl = previewImg.src;
+                if (pngUrl.includes('action=image')) {
+                    // 添加format=png参数
+                    pngUrl = pngUrl + '&format=png';
                 }
                 
-                const isSVG = previewImg.src.includes('action=image') || previewImg.src.endsWith('.svg');
-                
-                if (isSVG) {
-                    // SVG转PNG
-                    const blob = await convertSvgToPng(previewImg.src);
-                    
-                    // 尝试多种方式写入
-                    try {
-                        await navigator.clipboard.write([
-                            new ClipboardItem({
-                                'image/png': blob
-                            })
-                        ]);
-                    } catch (e1) {
-                        // 降级方案：尝试作为通用类型
-                        try {
-                            await navigator.clipboard.write([
-                                new ClipboardItem({
-                                    [blob.type]: blob
-                                })
-                            ]);
-                        } catch (e2) {
-                            // 再次降级：使用旧的execCommand方法
-                            const url = URL.createObjectURL(blob);
-                            const img = document.createElement('img');
-                            img.src = url;
-                            document.body.appendChild(img);
-                            
-                            const range = document.createRange();
-                            range.selectNode(img);
-                            window.getSelection().removeAllRanges();
-                            window.getSelection().addRange(range);
-                            
-                            const success = document.execCommand('copy');
-                            document.body.removeChild(img);
-                            URL.revokeObjectURL(url);
-                            
-                            if (!success) {
-                                throw new Error('execCommand copy failed');
-                            }
-                        }
-                    }
-                } else {
-                    // 非SVG直接复制
-                    const response = await fetch(previewImg.src);
-                    const blob = await response.blob();
-                    
-                    await navigator.clipboard.write([
-                        new ClipboardItem({
-                            [blob.type]: blob
-                        })
-                    ]);
+                // 获取PNG blob
+                const response = await fetch(pngUrl);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch PNG: ' + response.status);
                 }
+                
+                const blob = await response.blob();
+                
+                // 复制到剪贴板
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        'image/png': blob
+                    })
+                ]);
                 
                 btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
                 setTimeout(() => {

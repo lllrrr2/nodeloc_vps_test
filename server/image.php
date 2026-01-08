@@ -8,7 +8,12 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
 mb_internal_encoding('UTF-8');
-header('Content-Type: image/svg+xml; charset=utf-8');
+
+$format = $_GET['format'] ?? 'svg'; // 支持 svg 或 png
+
+if ($format !== 'png') {
+    header('Content-Type: image/svg+xml; charset=utf-8');
+}
 header('Cache-Control: no-cache, no-store, must-revalidate');
 
 $filePath = basename($_GET['file'] ?? '');
@@ -36,9 +41,40 @@ if ($content === false) {
 $data = parseTestResults($content);
 
 try {
-    generateSVGImage($data);
+    $svgContent = generateSVGImage($data);
+    
+    // 如果需要PNG格式，转换SVG到PNG
+    if ($format === 'png') {
+        convertSvgToPng($svgContent);
+    }
 } catch (Exception $e) {
     generateErrorSVG("生成失败: " . $e->getMessage());
+}
+
+// SVG转PNG函数
+function convertSvgToPng($svgContent) {
+    // 需要Imagick扩展
+    if (!extension_loaded('imagick')) {
+        header('Content-Type: text/plain');
+        echo "Error: Imagick extension required for PNG output";
+        exit;
+    }
+    
+    try {
+        $imagick = new Imagick();
+        $imagick->readImageBlob($svgContent);
+        $imagick->setImageFormat('png');
+        $imagick->setImageBackgroundColor('#F1F5F9');
+        $imagick->setImageAlphaChannel(Imagick::ALPHACHANNEL_REMOVE);
+        
+        header('Content-Type: image/png');
+        echo $imagick->getImageBlob();
+        $imagick->clear();
+        $imagick->destroy();
+    } catch (Exception $e) {
+        header('Content-Type: text/plain');
+        echo "Error converting to PNG: " . $e->getMessage();
+    }
 }
 
 // ============ 解析函数 ============
@@ -402,7 +438,9 @@ function generateSVGImage($data) {
     drawFooter($svg, $width, $currentY + 30);
     
     $svg[] = '</svg>';
-    echo implode("\n", $svg);
+    $svgOutput = implode("\n", $svg);
+    echo $svgOutput;
+    return $svgOutput;
 }
 
 function drawHeader(&$svg, $width, $timestamp, $y) {
