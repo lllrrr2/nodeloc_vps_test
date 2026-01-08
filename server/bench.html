@@ -578,8 +578,11 @@
             try {
                 // 直接获取PNG格式
                 let pngUrl = previewImg.src;
-                if (pngUrl.includes('action=image')) {
+                // 添加format=png参数
+                if (pngUrl.includes('?')) {
                     pngUrl = pngUrl + '&format=png';
+                } else {
+                    pngUrl = pngUrl + '?format=png';
                 }
                 
                 console.log('Fetching PNG from:', pngUrl);
