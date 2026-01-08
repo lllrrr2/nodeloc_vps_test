@@ -274,20 +274,19 @@
         
         console.log('File path from param:', filePath);
         
-        // If no parameter, construct file path from URL
-        // For URLs like: /result/2026/01/NL1767859366-65A535.txt
-        // Or: /bench.html?file=2026/01/NL1767859366-65A535.txt
+        // If no parameter, extract from URL path
         if (!filePath) {
-            // If URL path contains the actual txt file, extract the relative path
-            if (urlPath.endsWith('.txt')) {
-                // Extract everything after /result/ or use full path
-                if (urlPath.includes('/result/')) {
-                    filePath = urlPath.split('/result/')[1];
-                } else {
-                    // Remove leading slash
-                    filePath = urlPath.substring(1);
-                }
-                console.log('Extracted file path from URL:', filePath);
+            // Handle /result/YYYY/MM/filename.txt format
+            if (urlPath.startsWith('/result/')) {
+                // Extract everything after /result/
+                filePath = urlPath.substring(8); // Remove '/result/'
+                console.log('Extracted file path from /result/ URL:', filePath);
+            }
+            // Handle direct .txt file access
+            else if (urlPath.endsWith('.txt')) {
+                // Remove leading slash
+                filePath = urlPath.substring(1);
+                console.log('Extracted file path from direct URL:', filePath);
             }
         }
         

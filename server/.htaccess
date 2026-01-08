@@ -5,10 +5,10 @@
     RewriteEngine On
     RewriteBase /
     
-    # 如果访问的是 /result/YYYY/MM/filename.txt，返回 bench.html 但保持 URL 不变
+    # 如果访问 /result/* 路径，使用 result.php 处理
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^result/(.*)$ bench.html [L]
+    RewriteRule ^result/(.+)$ result.php [L]
 </IfModule>
 
 # 设置MIME类型
