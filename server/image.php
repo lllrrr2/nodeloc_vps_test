@@ -218,6 +218,16 @@ function parseRouteTrace($content) {
     
     foreach ($matches as $match) {
         $routeNum = $match[1];
+        $destination = $match[2];
+        $metrics["路由 $routeNum"] = $destination;
+    }
+    
+    return $metrics;
+}
+
+// ============ 图片生成 ============
+
+function generateResultImage($data) {
     error_log("[generateResultImage] Start");
     $width = 1200;
     $padding = 25;
@@ -229,16 +239,6 @@ function parseRouteTrace($content) {
     
     // 查找中文字体
     error_log("[generateResultImage] Finding Chinese font");
-// ============ 图片生成 ============
-
-function generateResultImage($data) {
-    $width = 1200;
-    $padding = 25;
-    
-    // 创建draw对象
-    $draw = new ImagickDraw();
-    
-    // 查找中文字体
     $fontFile = findChineseFont();
     if ($fontFile) {
         $draw->setFont($fontFile);
@@ -262,11 +262,7 @@ function generateResultImage($data) {
     $image->newImage($width, $estimatedHeight, new ImagickPixel('#F8F9FA'));
     error_log("[generateResultImage] Image initialized");
     $image->setImageFormat('png');
-    error_log("[generateResultImage] Format set to PNG"
-    // 创建图片
-    $image = new Imagick();
-    $image->newImage($width, $estimatedHeight, new ImagickPixel('#F8F9FA'));
-    $image->setImageFormat('png');
+    error_log("[generateResultImage] Format set to PNG");
     
     $currentY = 0;
     
