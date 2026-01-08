@@ -477,11 +477,11 @@ function drawInfoCards($image, $draw, $x, $y, $width, $metrics) {
 }
 
 function drawIPQualitySingle($image, $draw, $x, $y, $width, $metrics) {
-    // 多个小卡片显示
-    $cardWidth = 280;
+    // 多个小卡片显示，6列布局
+    $cardWidth = 185;
     $cardHeight = 70;
     $spacing = 10;
-    $cols = 4;
+    $cols = 6;
     $col = 0;
     $currentX = $x;
     $currentY = $y;
