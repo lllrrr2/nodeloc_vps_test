@@ -11,9 +11,7 @@ mb_internal_encoding('UTF-8');
 
 $format = $_GET['format'] ?? 'svg'; // 支持 svg 或 png
 
-if ($format !== 'png') {
-    header('Content-Type: image/svg+xml; charset=utf-8');
-}
+// 延迟设置Content-Type，让convertSvgToPng函数来设置
 header('Cache-Control: no-cache, no-store, must-revalidate');
 
 $filePath = basename($_GET['file'] ?? '');
@@ -46,6 +44,10 @@ try {
     // 如果需要PNG格式，转换SVG到PNG
     if ($format === 'png') {
         convertSvgToPng($svgContent);
+    } else {
+        // 输出SVG
+        header('Content-Type: image/svg+xml; charset=utf-8');
+        echo $svgContent;
     }
 } catch (Exception $e) {
     generateErrorSVG("生成失败: " . $e->getMessage());
@@ -439,7 +441,6 @@ function generateSVGImage($data) {
     
     $svg[] = '</svg>';
     $svgOutput = implode("\n", $svg);
-    echo $svgOutput;
     return $svgOutput;
 }
 
