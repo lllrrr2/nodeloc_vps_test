@@ -323,8 +323,14 @@ function drawHeader($image, $draw, $width, $timestamp) {
     
     // 设置字体
     $fontFile = findChineseFont();
+    error_log("[drawHeader] Font file: " . ($fontFile ? $fontFile : 'NULL'));
     if ($fontFile) {
-        $draw->setFont($fontFile);
+        try {
+            $draw->setFont($fontFile);
+            error_log("[drawHeader] Font set successfully");
+        } catch (Exception $e) {
+            error_log("[drawHeader] Font set failed: " . $e->getMessage());
+        }
     }
     
     // 渐变背景
@@ -337,12 +343,14 @@ function drawHeader($image, $draw, $width, $timestamp) {
     $draw->setFillColor('#FFFFFF');
     $draw->setFontSize(28);
     $draw->setFontWeight(700);
-    $draw->annotation(75, 50, "NodeLoc VPS 性能测试报告");
+    $image->annotateImage($draw, 75, 50, 0, "NodeLoc VPS 性能测试报告");
+    error_log("[drawHeader] Title drawn");
     
     // 副标题
     $draw->setFontSize(14);
     $draw->setFontWeight(400);
-    $draw->annotation(75, 80, "生成时间: " . $timestamp);
+    $image->annotateImage($draw, 75, 80, 0, "生成时间: " . $timestamp);
+    error_log("[drawHeader] Subtitle drawn");
     
     // 装饰圆圈
     $headerDraw->setFillColor('#FFA726');
