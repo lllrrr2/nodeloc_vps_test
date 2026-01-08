@@ -111,8 +111,20 @@ function parseYABS($content) {
     }
     
     // 网络状态
-    if (preg_match('/IPv4\/IPv6\s*:\s*([^\n]+)/i', $content, $match)) {
-        $metrics['网络'] = trim(str_replace(['✔', '❌'], ['', ''], $match[1]));
+    if (preg_match('/IPv4\/IPv6\s*:\s*(.+)/i', $content, $match)) {
+        $status = trim($match[1]);
+        // 分别提取IPv4和IPv6状态
+        if (preg_match('/([✔❌])\s*Online.*?([✔❌])\s*Online/u', $status, $networkMatch)) {
+            $ipv4Status = ($networkMatch[1] === '✔') ? '✓' : '✗';
+            $ipv6Status = ($networkMatch[2] === '✔') ? '✓' : '✗';
+            $metrics['IPv4'] = $ipv4Status;
+            $metrics['IPv6'] = $ipv6Status;
+        } elseif (preg_match('/([✔❌]).*?([✔❌])/u', $status, $networkMatch)) {
+            $ipv4Status = ($networkMatch[1] === '✔') ? '✓' : '✗';
+            $ipv6Status = ($networkMatch[2] === '✔') ? '✓' : '✗';
+            $metrics['IPv4'] = $ipv4Status;
+            $metrics['IPv6'] = $ipv6Status;
+        }
     }
     
     // 位置信息
@@ -180,7 +192,8 @@ function parseIPQuality($content) {
 
 function parseStreaming($content) {
     $metrics = [];
-    $services = ['Netflix', 'YouTube', 'Disney\+', 'TikTok', 'Amazon Prime', 'ChatGPT', 'Spotify'];
+    $services = ['Netflix', 'YouTube', 'Disney\+', 'TikTok', 'Amazon Prime', 'ChatGPT', 'Spotify', 
+                 'Dazn', 'TVBAnywhere', 'iQyi', 'Viu\.com', 'MyTVSuper', 'BiliBili', 'Bahamut'];
     
     foreach ($services as $service) {
         $pattern = "/" . str_replace('+', '\+', $service) . "[：:]*\s*(.+)/ui";
@@ -609,10 +622,10 @@ function drawResponseCard(&$svg, $x, $y, $metrics) {
 }
 
 function drawRouteCards(&$svg, $x, $y, $metrics) {
-    $w = 280;
+    $w = 225;
     $h = 90;
-    $gap = 12;
-    $cols = 4;
+    $gap = 10;
+    $cols = 5;
     $col = 0;
     $cx = $x;
     $cy = $y;
