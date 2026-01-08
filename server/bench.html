@@ -310,11 +310,11 @@
             }
             
             console.log('Attempting to load file:', filePath);
-            console.log('Full fetch URL:', window.location.origin + '/' + filePath);
             
             try {
-                const fetchUrl = filePath.startsWith('/') ? filePath : '/' + filePath;
-                console.log('Fetching:', fetchUrl);
+                // 使用 result.php 来获取文件内容
+                const fetchUrl = `result.php?file=${encodeURIComponent(filePath)}`;
+                console.log('Fetching via result.php:', fetchUrl);
                 
                 const response = await fetch(fetchUrl);
                 console.log('Response status:', response.status);
