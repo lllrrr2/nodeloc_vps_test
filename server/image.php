@@ -414,17 +414,17 @@ function drawSection($image, $draw, $x, $y, $width, $title, $metrics, $type) {
 
 function drawInfoCards($image, $draw, $x, $y, $width, $metrics) {
     $cardWidth = 270;
-    // 获取字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
-    
     $cardHeight = 100;
     $spacing = 20;
     $col = 0;
     $currentX = $x;
     $currentY = $y;
+    
+    // 获取字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
     
     foreach ($metrics as $key => $value) {
         // 绘制卡片背景
@@ -471,17 +471,17 @@ function drawInfoCards($image, $draw, $x, $y, $width, $metrics) {
 function drawStreamingGrid($image, $draw, $x, $y, $width, $metrics) {
     $itemWidth = 180;
     $itemHeight = 50;
-    // 获取字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
-    
     $cols = 3;
     $spacing = 15;
     $col = 0;
     $currentX = $x;
     $currentY = $y;
+    
+    // 获取字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
     
     foreach ($metrics as $service => $status) {
         if ($service === '汇总') continue;
@@ -518,13 +518,7 @@ function drawStreamingGrid($image, $draw, $x, $y, $width, $metrics) {
         }
     }
     
-    if 获取字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
-    
-    // ($col > 0) {
+    if ($col > 0) {
         $currentY += $itemHeight + $spacing;
     }
     
@@ -542,7 +536,13 @@ function drawBarChart($image, $draw, $x, $y, $width, $metrics) {
         if ($key === '平均下载' || $key === '平均上传') {
             $numValue = floatval(preg_replace('/[^0-9.]/', '', $value));
             if ($numValue > $maxValue) $maxValue = $numValue;
-        }
+       获取字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
+    
+    //  }
     }
     
     if ($maxValue == 0) $maxValue = 100;
@@ -568,12 +568,6 @@ function drawBarChart($image, $draw, $x, $y, $width, $metrics) {
         $barWidth = ($numValue / $maxValue) * ($width - 300);
         
         $barDraw = new ImagickDraw();
-        $barDraw->setFillColor('#42A5F5');
-        $barDraw->roundRectangle($x + 120, $currentY + 8, $x + 120 + $barWidth, $currentY + $barHeight - 8, 4, 4);
-        $image->drawImage($barDraw);
-        
-        // 数值
-        $draw->setFillColor('#212121');
     // 获取字体
     $fontFile = findChineseFont();
     if ($fontFile) {
@@ -598,13 +592,13 @@ function drawList($image, $draw, $x, $y, $metrics) {
     if ($fontFile) {
         $draw->setFont($fontFile);
     }
-    
-        $draw->setFillColor('#212121');
-        $draw->setFontSize(13);
-        $draw->annotation($x + 20, $currentY + 20, "$key: $value");
-        $currentY += 30;
+    // 获取字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
     }
     
+    foreach ($metrics as $key => $value) {
     return $currentY;
 }
 
@@ -616,6 +610,12 @@ function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
     $col = 0;
     $currentX = $x;
     $currentY = $y;
+    
+    // 获取字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
     
     foreach ($metrics as $label => $destination) {
         // 确定颜色
@@ -659,13 +659,7 @@ function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
         
         $col++;
         if ($col >= $cols) {
-            $col = 0;
-            $currentX = $x;
-            $currentY += $itemHeight + $spacing;
-        } else {
-            $currentX += $itemWidth + $spacing;
-        }
-    }获取字体
+     字体
     $fontFile = findChineseFont();
     if ($fontFile) {
         $draw->setFont($fontFile);
@@ -688,6 +682,12 @@ function drawFooter($image, $draw, $width, $height) {
     $footerDraw->setFillColor('#0D47A1');
     $footerDraw->rectangle(0, $footerY, $width, $height);
     $image->drawImage($footerDraw);
+    
+    // 获取字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
     
     // 水印
     $draw->setFillColor('#FFFFFF');
