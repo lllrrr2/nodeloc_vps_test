@@ -371,7 +371,7 @@ function drawSection($image, $draw, $x, $y, $width, $title, $metrics, $type) {
     $draw->setFillColor('#1A73E8');
     $draw->setFontSize(18);
     $draw->setFontWeight(700);
-    $draw->annotation($x, $y + 20, $title);
+    $image->annotateImage($draw, $x, $y + 20, 0, $title);
     
     $y += 40;
     
@@ -416,13 +416,13 @@ function drawInfoCards($image, $draw, $x, $y, $width, $metrics) {
         // 标题
         $draw->setFillColor('#757575');
         $draw->setFontSize(11);
-        $draw->annotation($currentX + 15, $currentY + 35, $key);
+        $image->annotateImage($draw, $currentX + 15, $currentY + 35, 0, $key);
         
         // 数值 - 限制长度
         $displayValue = mb_strlen($value) > 30 ? mb_substr($value, 0, 27) . '...' : $value;
         $draw->setFillColor('#212121');
         $draw->setFontSize(13);
-        $draw->annotation($currentX + 15, $currentY + 65, $displayValue);
+        $image->annotateImage($draw, $currentX + 15, $currentY + 65, 0, $displayValue);
         
         $col++;
         if ($col >= 4) {
@@ -468,12 +468,12 @@ function drawStreamingGrid($image, $draw, $x, $y, $width, $metrics) {
         // 图标
         $draw->setFillColor($textColor);
         $draw->setFontSize(20);
-        $draw->annotation($currentX + 15, $currentY + 35, $status);
+        $image->annotateImage($draw, $currentX + 15, $currentY + 35, 0, $status);
         
         // 服务名
         $draw->setFillColor('#212121');
         $draw->setFontSize(12);
-        $draw->annotation($currentX + 50, $currentY + 35, $service);
+        $image->annotateImage($draw, $currentX + 50, $currentY + 35, 0, $service);
         
         $col++;
         if ($col >= $cols) {
@@ -522,7 +522,7 @@ function drawBarChart($image, $draw, $x, $y, $width, $metrics) {
         // 标签
         $draw->setFillColor('#212121');
         $draw->setFontSize(12);
-        $draw->annotation($x + 15, $currentY + 22, $key);
+        $image->annotateImage($draw, $x + 15, $currentY + 22, 0, $key);
         
         // 条形
         $numValue = floatval(preg_replace('/[^0-9.]/', '', $value));
@@ -536,7 +536,7 @@ function drawBarChart($image, $draw, $x, $y, $width, $metrics) {
         // 数值
         $draw->setFillColor('#212121');
         $draw->setFontSize(12);
-        $draw->annotation($x + 130 + $barWidth, $currentY + 22, $value);
+        $image->annotateImage($draw, $x + 130 + $barWidth, $currentY + 22, 0, $value);
         
         $currentY += $barHeight + $spacing;
     }
@@ -550,7 +550,7 @@ function drawList($image, $draw, $x, $y, $metrics) {
     foreach ($metrics as $key => $value) {
         $draw->setFillColor('#212121');
         $draw->setFontSize(13);
-        $draw->annotation($x + 20, $currentY + 20, "$key: $value");
+        $image->annotateImage($draw, $x + 20, $currentY + 20, 0, "$key: $value");
         $currentY += 30;
     }
     
@@ -590,7 +590,7 @@ function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
         $draw->setFillColor($color);
         $draw->setFontSize(12);
         $draw->setFontWeight(700);
-        $draw->annotation($currentX + 15, $currentY + 28, $label);
+        $image->annotateImage($draw, $currentX + 15, $currentY + 28, 0, $label);
         
         // 目的地 - 自动换行
         $draw->setFillColor('#212121');
@@ -600,10 +600,10 @@ function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
         if (mb_strlen($destination) > $maxLen) {
             $line1 = mb_substr($destination, 0, $maxLen);
             $line2 = mb_substr($destination, $maxLen);
-            $draw->annotation($currentX + 15, $currentY + 48, $line1);
-            $draw->annotation($currentX + 15, $currentY + 62, $line2);
+            $image->annotateImage($draw, $currentX + 15, $currentY + 48, 0, $line1);
+            $image->annotateImage($draw, $currentX + 15, $currentY + 62, 0, $line2);
         } else {
-            $draw->annotation($currentX + 15, $currentY + 48, $destination);
+            $image->annotateImage($draw, $currentX + 15, $currentY + 48, 0, $destination);
         }
         
         $col++;
@@ -635,8 +635,8 @@ function drawFooter($image, $draw, $width, $height) {
     // 水印
     $draw->setFillColor('#FFFFFF');
     $draw->setFontSize(11);
-    $draw->annotation(25, $footerY + 30, "Powered by bench.nodeloc.cc");
-    $draw->annotation($width - 150, $footerY + 30, "NodeLoc.com");
+    $finalImage->annotateImage($draw, 25, $footerY + 30, 0, "Powered by bench.nodeloc.cc");
+    $finalImage->annotateImage($draw, $width - 150, $footerY + 30, 0, "NodeLoc.com");
 }
 
 function findChineseFont() {
