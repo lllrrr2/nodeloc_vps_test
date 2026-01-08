@@ -439,6 +439,91 @@ run_script() {
     echo -e "${GREEN}测试完成。${NC}"
 }
 
+# 移除脚本安装的所有内容
+uninstall_all() {
+    clear
+    echo -e "${RED}============================================${NC}"
+    echo -e "${RED}        移除脚本安装所有内容${NC}"
+    echo -e "${RED}============================================${NC}"
+    echo ""
+    echo -e "${YELLOW}此操作将移除以下内容：${NC}"
+    echo "  - 已安装的依赖项 (iperf3, bc)"
+    echo "  - 所有测试结果文件"
+    echo "  - 脚本临时文件"
+    echo ""
+    read -p "确认要移除所有内容吗？(y/n): " confirm < /dev/tty
+    
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+        echo -e "${GREEN}已取消操作。${NC}"
+        sleep 2s
+        clear
+        return
+    fi
+    
+    echo ""
+    echo -e "${YELLOW}正在移除依赖项...${NC}"
+    
+    # 检测操作系统
+    detect_os
+    
+    local dependencies=("iperf3" "bc")
+    
+    case "${os_type,,}" in
+        debian|ubuntu)
+            for dep in "${dependencies[@]}"; do
+                if command -v "$dep" &>/dev/null; then
+                    echo -e "${YELLOW}正在移除 $dep...${NC}"
+                    sudo apt-get remove -y "$dep" 2>/dev/null
+                fi
+            done
+            sudo apt-get autoremove -y
+            ;;
+        centos|rhel|fedora)
+            for dep in "${dependencies[@]}"; do
+                if command -v "$dep" &>/dev/null; then
+                    echo -e "${YELLOW}正在移除 $dep...${NC}"
+                    sudo dnf remove -y "$dep" 2>/dev/null || sudo yum remove -y "$dep" 2>/dev/null
+                fi
+            done
+            ;;
+        alpine)
+            for dep in "${dependencies[@]}"; do
+                if command -v "$dep" &>/dev/null; then
+                    echo -e "${YELLOW}正在移除 $dep...${NC}"
+                    sudo apk del "$dep" 2>/dev/null
+                fi
+            done
+            ;;
+        arch|manjaro)
+            for dep in "${dependencies[@]}"; do
+                if command -v "$dep" &>/dev/null; then
+                    echo -e "${YELLOW}正在移除 $dep...${NC}"
+                    sudo pacman -R --noconfirm "$dep" 2>/dev/null
+                fi
+            done
+            ;;
+    esac
+    
+    # 清理测试结果文件
+    echo -e "${YELLOW}正在清理测试结果文件...${NC}"
+    rm -f NLvps_results_*.md 2>/dev/null
+    rm -f NLvps_results_*.url 2>/dev/null
+    rm -f NLvps_results_*_* 2>/dev/null
+    
+    # 清理临时文件
+    echo -e "${YELLOW}正在清理临时文件...${NC}"
+    rm -f /tmp/NLbench.sh 2>/dev/null
+    
+    echo ""
+    echo -e "${GREEN}============================================${NC}"
+    echo -e "${GREEN}        移除完成！${NC}"
+    echo -e "${GREEN}============================================${NC}"
+    echo ""
+    read -n 1 -s -r -p "按回车键继续..." < /dev/tty
+    echo
+    clear
+}
+
 # 生成最终的 Markdown 输出
 generate_markdown_output() {
     local base_output_file=$1
@@ -568,10 +653,11 @@ main_menu() {
     echo -e "${GREEN}测试项目：${NC}Yabs，IP质量，流媒体解锁，响应测试，多线程测试，单线程测试，回程路由。"
     echo -e "${YELLOW}1. 执行所有测试脚本${NC}"
     echo -e "${YELLOW}2. 选择特定测试脚本${NC}"
+    echo -e "${YELLOW}3. 移除脚本安装所有内容${NC}"
     echo -e "${YELLOW}0. 退出${NC}"
     
     # 提示输入并读取，从终端读取输入
-    read -p "请选择操作 [0-2]: " choice < /dev/tty
+    read -p "请选择操作 [0-3]: " choice < /dev/tty
 
     # 确保输入非空
     if [[ -z "$choice" ]]; then
@@ -589,6 +675,9 @@ main_menu() {
             ;;
         2)
             run_selected_scripts
+            ;;
+        3)
+            uninstall_all
             ;;
         0)
             echo -e "${RED}感谢使用NodeLoc聚合测试脚本，已退出脚本，期待你的下次使用！${NC}"
