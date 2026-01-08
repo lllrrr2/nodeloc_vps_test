@@ -612,13 +612,7 @@ function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
         $currentY += $itemHeight + $spacing;
     }
     
-    ret设置字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
-    
-    // urn $currentY;
+    return $currentY;
 }
 
 function drawFooter($image, $draw, $width, $height) {
