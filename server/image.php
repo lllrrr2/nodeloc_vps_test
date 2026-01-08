@@ -622,10 +622,10 @@ function drawResponseCard(&$svg, $x, $y, $metrics) {
 }
 
 function drawRouteCards(&$svg, $x, $y, $metrics) {
-    $w = 225;
+    $w = 80;
     $h = 80;
     $gap = 10;
-    $cols = 5;
+    $cols = 12;
     $col = 0;
     $cx = $x;
     $cy = $y;
