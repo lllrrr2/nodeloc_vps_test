@@ -243,16 +243,17 @@ function generateResultImage($data) {
     if ($fontFile) {
         error_log("Found font file: " . $fontFile);
         try {
-            // TTC字体需要指定索引，使用[0]表示第一个字体
-            if (strpos($fontFile, '.ttc') !== false) {
-                $draw->setFont($fontFile . '[0]');
-                error_log("Set TTC font with index: " . $fontFile . '[0]');
-            } else {
-                $draw->setFont($fontFile);
-                error_log("Set font: " . $fontFile);
-            }
+            $draw->setFont($fontFile);
+            error_log("Font set successfully");
         } catch (Exception $e) {
             error_log("Font set error: " . $e->getMessage());
+            // 如果失败，尝试使用字体名称
+            try {
+                $draw->setFont('WenQuanYi-Zen-Hei');
+                error_log("Using font name: WenQuanYi-Zen-Hei");
+            } catch (Exception $e2) {
+                error_log("Font name also failed: " . $e2->getMessage());
+            }
         }
     } else {
         error_log("WARNING: No Chinese font found");
