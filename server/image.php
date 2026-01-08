@@ -351,17 +351,29 @@ function drawHeader($image, $draw, $width, $timestamp) {
     $headerDraw->rectangle(0, 0, $width, $headerHeight);
     $image->drawImage($headerDraw);
     
-    // 使用传入的$draw对象绘制文本（已经设置好字体和抗锯齿）
-    // 标题 - 改用英文测试
-    $draw->setFillColor('#FFFFFF');
-    $draw->setFontSize(24);
-    $image->annotateImage($draw, 75, 40, 0, "VPS Performance Test Report");
-    error_log("[drawHeader] Title drawn with main draw object");
+    // 创建独立的draw对象用于文本
+    $textDraw = new ImagickDraw();
+    $textDraw->setTextAntialias(true);
+    
+    // 设置字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $textDraw->setFont($fontFile);
+        error_log("[drawHeader] Font set: " . $fontFile);
+    }
+    
+    // 标题
+    $textDraw->setFillColor('#FFFFFF');
+    $textDraw->setFontSize(28);
+    $textDraw->setFontWeight(700);
+    $image->annotateImage($textDraw, 75, 40, 0, "VPS Performance Test Report");
+    error_log("[drawHeader] Title annotated");
     
     // 副标题
-    $draw->setFontSize(12);
-    $image->annotateImage($draw, 75, 65, 0, "Generated: " . $timestamp);
-    error_log("[drawHeader] Subtitle drawn with main draw object");
+    $textDraw->setFontSize(14);
+    $textDraw->setFontWeight(400);
+    $image->annotateImage($textDraw, 75, 65, 0, "Generated: " . $timestamp);
+    error_log("[drawHeader] Subtitle annotated");
     
     // 装饰圆圈
     $headerDraw->setFillColor('#FFA726');
@@ -381,7 +393,7 @@ function drawSection($image, $draw, $x, $y, $width, $title, $metrics, $type) {
     
     // 绘制section标题
     $draw->setFillColor('#1A73E8');
-    $draw->setFontSize(16);  // 从18减到16
+    $draw->setFontSize(18);
     $draw->setFontWeight(700);
     $image->annotateImage($draw, $x, $y + 18, 0, $title);
     
@@ -431,13 +443,13 @@ function drawInfoCards($image, $draw, $x, $y, $width, $metrics) {
         
         // 标题
         $draw->setFillColor('#757575');
-        $draw->setFontSize(10);
+        $draw->setFontSize(11);
         $image->annotateImage($draw, $currentX + 12, $currentY + 25, 0, $key);
         
         // 数值 - 自动截断过长文本
         $displayValue = mb_strlen($value) > 28 ? mb_substr($value, 0, 25) . '...' : $value;
         $draw->setFillColor('#212121');
-        $draw->setFontSize(11);
+        $draw->setFontSize(13);
         $image->annotateImage($draw, $currentX + 12, $currentY + 48, 0, $displayValue);
         
         $col++;
@@ -483,13 +495,13 @@ function drawIPQualitySingle($image, $draw, $x, $y, $width, $metrics) {
         
         // 标题
         $draw->setFillColor('#757575');
-        $draw->setFontSize(10);
+        $draw->setFontSize(11);
         $image->annotateImage($draw, $currentX + 12, $currentY + 25, 0, $key);
         
         // 数值
         $displayValue = mb_strlen($value) > 35 ? mb_substr($value, 0, 32) . '...' : $value;
         $draw->setFillColor('#212121');
-        $draw->setFontSize(11);
+        $draw->setFontSize(13);
         $image->annotateImage($draw, $currentX + 12, $currentY + 48, 0, $displayValue);
         
         $col++;
@@ -537,12 +549,12 @@ function drawStreamingGrid($image, $draw, $x, $y, $width, $metrics) {
         
         // 图标
         $draw->setFillColor($iconColor);
-        $draw->setFontSize(20);
+        $draw->setFontSize(22);
         $image->annotateImage($draw, $currentX + 15, $currentY + 38, 0, $icon);
         
         // 服务名
         $draw->setFillColor('#212121');
-        $draw->setFontSize(11);
+        $draw->setFontSize(13);
         $image->annotateImage($draw, $currentX + 45, $currentY + 38, 0, $service);
         
         $col++;
@@ -750,14 +762,14 @@ function drawBarChartCompact($image, $draw, $x, $y, $width, $metrics) {
         
         // 标签
         $draw->setFillColor('#212121');
-        $draw->setFontSize(10);
+        $draw->setFontSize(11);
         $draw->setFontWeight(400);
         $labelText = str_replace('平均', '', $key);
         $image->annotateImage($draw, $x + 5, $currentY + 17, 0, $labelText);
         
         // 数值
         $draw->setFillColor('#1976D2');
-        $draw->setFontSize(10);
+        $draw->setFontSize(11);
         $draw->setFontWeight(700);
         $image->annotateImage($draw, $x + 85, $currentY + 17, 0, $value);
         
@@ -807,13 +819,13 @@ function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
         
         // 路由编号
         $draw->setFillColor($color);
-        $draw->setFontSize(11);
+        $draw->setFontSize(12);
         $draw->setFontWeight(700);
         $image->annotateImage($draw, $currentX + 15, $currentY + 22, 0, $label);
         
         // 目的地
         $draw->setFillColor('#212121');
-        $draw->setFontSize(10);
+        $draw->setFontSize(11);
         $draw->setFontWeight(400);
         $maxLen = 42;
         if (mb_strlen($destination) > $maxLen) {
@@ -825,7 +837,7 @@ function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
         
         // 显示跳点信息
         if (!empty($hops)) {
-            $draw->setFontSize(8);
+            $draw->setFontSize(9);
             $draw->setFillColor('#757575');
             $hopText = '跳点: ' . implode(' → ', array_slice($hops, 0, 3));  // 显示前3跳
             if (count($hops) > 3) $hopText .= ' ...';
@@ -873,7 +885,7 @@ function drawFooter($image, $draw, $width, $height) {
     
     // 水印
     $draw->setFillColor('#FFFFFF');
-    $draw->setFontSize(10);  // 从11减到10
+    $draw->setFontSize(11);
     $image->annotateImage($draw, 25, $footerY + 25, 0, "Powered by bench.nodeloc.cc");
     $image->annotateImage($draw, $width - 150, $footerY + 25, 0, "NodeLoc.com");
 }
