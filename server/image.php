@@ -11,14 +11,11 @@ error_log("=== Imagick Image generation started ===");
 error_log("GET: " . print_r($_GET, true));
 
 // 检查Imagick扩展
-error_log("Checking Imagick extension...");
 if (!extension_loaded('imagick')) {
-    error_log("ERROR: Imagick extension not loaded");
     header('Content-Type: text/plain; charset=utf-8');
     http_response_code(500);
     die("错误: 需要安装 php-imagick 扩展\n安装: sudo apt-get install php-imagick && sudo systemctl restart php-fpm nginx");
 }
-error_log("Imagick extension OK");
 
 mb_internal_encoding('UTF-8');
 header('Content-Type: image/png');
@@ -45,29 +42,19 @@ if (!file_exists($fullPath)) {
 
 $content = file_get_contents($fullPath);
 if ($content === false) {
-    error_log("ERROR: Failed to read file");
     generateErrorImage("错误: 无法读取文件");
     exit;
 }
 
-error_log("File read OK, length: " . strlen($content));
+$data = parseTestResults($content);
+error_log("Parsed " . count($data['sections']) . " sections");
 
 try {
-    error_log("Starting parseTestResults...");
-    $data = parseTestResults($content);
-    error_log("Parsed " . count($data['sections']) . " sections");
-    
-    error_log("Starting generateResultImage...");
     generateResultImage($data);
     error_log("=== Image generated successfully ===");
 } catch (Exception $e) {
-    error_log("Exception: " . $e->getMessage());
-    error_log("Trace: " . $e->getTraceAsString());
+    error_log("ERROR: " . $e->getMessage());
     generateErrorImage("生成失败: " . $e->getMessage());
-} catch (Error $e) {
-    error_log("PHP Error: " . $e->getMessage());
-    error_log("Trace: " . $e->getTraceAsString());
-    generateErrorImage("PHP错误: " . $e->getMessage());
 }
 
 // ============ 解析函数 ============
@@ -228,35 +215,19 @@ function parseRouteTrace($content) {
 // ============ 图片生成 ============
 
 function generateResultImage($data) {
-    error_log("[generateResultImage] Start");
     $width = 1200;
     $padding = 25;
     
     // 创建draw对象
-    error_log("[generateResultImage] Creating ImagickDraw");
     $draw = new ImagickDraw();
-    error_log("[generateResultImage] ImagickDraw created");
     
     // 查找中文字体
-    error_log("[generateResultImage] Finding Chinese font");
     $fontFile = findChineseFont();
     if ($fontFile) {
-        error_log("Found font file: " . $fontFile);
-        try {
-            $draw->setFont($fontFile);
-            error_log("Font set successfully");
-        } catch (Exception $e) {
-            error_log("Font set error: " . $e->getMessage());
-            // 如果失败，尝试使用字体名称
-            try {
-                $draw->setFont('WenQuanYi-Zen-Hei');
-                error_log("Using font name: WenQuanYi-Zen-Hei");
-            } catch (Exception $e2) {
-                error_log("Font name also failed: " . $e2->getMessage());
-            }
-        }
+        $draw->setFont($fontFile);
+        error_log("Using font: " . $fontFile);
     } else {
-        error_log("WARNING: No Chinese font found");
+        error_log("WARNING: No Chinese font found, text may not display correctly");
     }
     
     // 预计算高度
@@ -268,13 +239,13 @@ function generateResultImage($data) {
     $estimatedHeight += count($sections['多线程测速']['metrics'] ?? []) > 0 ? 200 : 0;
     $estimatedHeight += count($sections['单线程测速']['metrics'] ?? []) > 0 ? 200 : 0;
     $estimatedHeight += count($sections['响应']['metrics'] ?? []) > 0 ? 100 : 0;
-    error_log("[generateResultImage] Creating Imagick object, size: {$width}x{$estimatedHeight}");
+    $estimatedHeight += count($sections['回程路由']['metrics'] ?? []) > 0 ? 350 : 0;
+    $estimatedHeight += 100; // 底部
+    
+    // 创建图片
     $image = new Imagick();
-    error_log("[generateResultImage] Imagick created");
     $image->newImage($width, $estimatedHeight, new ImagickPixel('#F8F9FA'));
-    error_log("[generateResultImage] Image initialized");
     $image->setImageFormat('png');
-    error_log("[generateResultImage] Format set to PNG");
     
     $currentY = 0;
     
@@ -350,17 +321,17 @@ function generateResultImage($data) {
 function drawHeader($image, $draw, $width, $timestamp) {
     $headerHeight = 120;
     
+    // 设置字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
+    
     // 渐变背景
     $headerDraw = new ImagickDraw();
     $headerDraw->setFillColor('#1A73E8');
     $headerDraw->rectangle(0, 0, $width, $headerHeight);
     $image->drawImage($headerDraw);
-    
-    // 获取字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
     
     // 标题
     $draw->setFillColor('#FFFFFF');
@@ -382,7 +353,7 @@ function drawHeader($image, $draw, $width, $timestamp) {
 }
 
 function drawSection($image, $draw, $x, $y, $width, $title, $metrics, $type) {
-    // 获取字体
+    // 设置字体
     $fontFile = findChineseFont();
     if ($fontFile) {
         $draw->setFont($fontFile);
@@ -419,12 +390,6 @@ function drawInfoCards($image, $draw, $x, $y, $width, $metrics) {
     $col = 0;
     $currentX = $x;
     $currentY = $y;
-    
-    // 获取字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
     
     foreach ($metrics as $key => $value) {
         // 绘制卡片背景
@@ -476,12 +441,6 @@ function drawStreamingGrid($image, $draw, $x, $y, $width, $metrics) {
     $col = 0;
     $currentX = $x;
     $currentY = $y;
-    
-    // 获取字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
     
     foreach ($metrics as $service => $status) {
         if ($service === '汇总') continue;
@@ -536,13 +495,7 @@ function drawBarChart($image, $draw, $x, $y, $width, $metrics) {
         if ($key === '平均下载' || $key === '平均上传') {
             $numValue = floatval(preg_replace('/[^0-9.]/', '', $value));
             if ($numValue > $maxValue) $maxValue = $numValue;
-       获取字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
-    
-    //  }
+        }
     }
     
     if ($maxValue == 0) $maxValue = 100;
@@ -568,12 +521,12 @@ function drawBarChart($image, $draw, $x, $y, $width, $metrics) {
         $barWidth = ($numValue / $maxValue) * ($width - 300);
         
         $barDraw = new ImagickDraw();
-    // 获取字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
-    
+        $barDraw->setFillColor('#42A5F5');
+        $barDraw->roundRectangle($x + 120, $currentY + 8, $x + 120 + $barWidth, $currentY + $barHeight - 8, 4, 4);
+        $image->drawImage($barDraw);
+        
+        // 数值
+        $draw->setFillColor('#212121');
         $draw->setFontSize(12);
         $draw->annotation($x + 130 + $barWidth, $currentY + 22, $value);
         
@@ -587,18 +540,12 @@ function drawList($image, $draw, $x, $y, $metrics) {
     $currentY = $y;
     
     foreach ($metrics as $key => $value) {
-    // 获取字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
-    // 获取字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
+        $draw->setFillColor('#212121');
+        $draw->setFontSize(13);
+        $draw->annotation($x + 20, $currentY + 20, "$key: $value");
+        $currentY += 30;
     }
     
-    foreach ($metrics as $key => $value) {
     return $currentY;
 }
 
@@ -610,12 +557,6 @@ function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
     $col = 0;
     $currentX = $x;
     $currentY = $y;
-    
-    // 获取字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
     
     foreach ($metrics as $label => $destination) {
         // 确定颜色
@@ -659,19 +600,25 @@ function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
         
         $col++;
         if ($col >= $cols) {
-     字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
+            $col = 0;
+            $currentX = $x;
+            $currentY += $itemHeight + $spacing;
+        } else {
+            $currentX += $itemWidth + $spacing;
+        }
     }
-    
-    // 
     
     if ($col > 0) {
         $currentY += $itemHeight + $spacing;
     }
     
-    return $currentY;
+    ret设置字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
+    
+    // urn $currentY;
 }
 
 function drawFooter($image, $draw, $width, $height) {
@@ -682,12 +629,6 @@ function drawFooter($image, $draw, $width, $height) {
     $footerDraw->setFillColor('#0D47A1');
     $footerDraw->rectangle(0, $footerY, $width, $height);
     $image->drawImage($footerDraw);
-    
-    // 获取字体
-    $fontFile = findChineseFont();
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
     
     // 水印
     $draw->setFillColor('#FFFFFF');
