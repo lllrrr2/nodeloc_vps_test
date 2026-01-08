@@ -333,7 +333,7 @@
                 
                 parseContent();
                 renderTabs();
-                // loadImage();  // 暂时禁用图片加载
+                loadImage(); // 函数内部已禁用
                 hideLoading();
             } catch (error) {
                 console.error('Load error:', error);
@@ -464,8 +464,10 @@
             return div.innerHTML;
         }
 
-        // Load image
+        // Load image (已禁用)
         function loadImage() {
+            return; // 禁用图片加载
+            /*
             if (!filePath) return;
             
             // Extract year, month, and filename from filePath
@@ -481,6 +483,7 @@
             img.onload = () => document.getElementById('imagePreview').classList.remove('d-none');
             img.onerror = () => {}; // Silently fail if image doesn't exist
             img.src = imgUrl;
+            */
         }
 
         // Show error
