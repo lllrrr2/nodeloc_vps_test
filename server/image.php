@@ -418,119 +418,160 @@ function drawSection($image, $draw, $x, $y, $width, $title, $metrics, $type) {
 }
 
 function drawInfoCards($image, $draw, $x, $y, $width, $metrics) {
-    // 单个大卡片，横向排列所有信息
-    $parts = [];
-    foreach ($metrics as $key => $value) {
-        $parts[] = "$key: $value";
-    }
-    $text = implode(' | ', $parts);
-    
+    // 多个小卡片，每行5个
+    $cardWidth = 220;
     $cardHeight = 70;
+    $spacing = 10;
+    $cols = 5;
+    $col = 0;
+    $currentX = $x;
+    $currentY = $y;
     
-    // 绘制卡片背景
-    $cardDraw = new ImagickDraw();
-    $cardDraw->setFillColor('#FFFFFF');
-    $cardDraw->setStrokeColor('#E0E0E0');
-    $cardDraw->setStrokeWidth(1);
-    $cardDraw->roundRectangle($x, $y, $x + $width - 50, $y + $cardHeight, 10, 10);
-    $image->drawImage($cardDraw);
+    foreach ($metrics as $key => $value) {
+        // 绘制卡片背景
+        $cardDraw = new ImagickDraw();
+        $cardDraw->setFillColor('#FFFFFF');
+        $cardDraw->setStrokeColor('#E0E0E0');
+        $cardDraw->setStrokeWidth(1);
+        $cardDraw->roundRectangle($currentX, $currentY, $currentX + $cardWidth, $currentY + $cardHeight, 8, 8);
+        $image->drawImage($cardDraw);
+        
+        // 顶部色条
+        $cardDraw->setFillColor('#42A5F5');
+        $cardDraw->rectangle($currentX + 1, $currentY + 1, $currentX + $cardWidth - 1, $currentY + 4);
+        $image->drawImage($cardDraw);
+        
+        // 标题
+        $draw->setFillColor('#757575');
+        $draw->setFontSize(10);
+        $image->annotateImage($draw, $currentX + 12, $currentY + 25, 0, $key);
+        
+        // 数值 - 自动截断过长文本
+        $displayValue = mb_strlen($value) > 28 ? mb_substr($value, 0, 25) . '...' : $value;
+        $draw->setFillColor('#212121');
+        $draw->setFontSize(11);
+        $image->annotateImage($draw, $currentX + 12, $currentY + 48, 0, $displayValue);
+        
+        $col++;
+        if ($col >= $cols) {
+            $col = 0;
+            $currentX = $x;
+            $currentY += $cardHeight + $spacing;
+        } else {
+            $currentX += $cardWidth + $spacing;
+        }
+    }
     
-    // 顶部色条
-    $cardDraw->setFillColor('#42A5F5');
-    $cardDraw->rectangle($x + 1, $y + 1, $x + $width - 51, $y + 5);
-    $image->drawImage($cardDraw);
+    if ($col > 0) {
+        $currentY += $cardHeight + $spacing;
+    }
     
-    // 标题
-    $draw->setFillColor('#1A73E8');
-    $draw->setFontSize(13);
-    $draw->setFontWeight(600);
-    $image->annotateImage($draw, $x + 20, $y + 28, 0, "系统配置");
-    
-    // 内容文字
-    $draw->setFillColor('#212121');
-    $draw->setFontSize(11);
-    $draw->setFontWeight(400);
-    $image->annotateImage($draw, $x + 20, $y + 50, 0, $text);
-    
-    return $y + $cardHeight + 15;
+    return $currentY;
 }
 
 function drawIPQualitySingle($image, $draw, $x, $y, $width, $metrics) {
-    // 提取关键信息：地区、组织
-    $parts = [];
-    foreach ($metrics as $key => $value) {
-        $parts[] = "$key: $value";
-    }
-    $text = implode(' | ', $parts);
-    
+    // 多个小卡片显示
+    $cardWidth = 280;
     $cardHeight = 70;
+    $spacing = 10;
+    $cols = 4;
+    $col = 0;
+    $currentX = $x;
+    $currentY = $y;
     
-    // 绘制卡片背景
-    $cardDraw = new ImagickDraw();
-    $cardDraw->setFillColor('#FFFFFF');
-    $cardDraw->setStrokeColor('#E0E0E0');
-    $cardDraw->setStrokeWidth(1);
-    $cardDraw->roundRectangle($x, $y, $x + $width - 50, $y + $cardHeight, 10, 10);
-    $image->drawImage($cardDraw);
+    foreach ($metrics as $key => $value) {
+        // 绘制卡片背景
+        $cardDraw = new ImagickDraw();
+        $cardDraw->setFillColor('#FFFFFF');
+        $cardDraw->setStrokeColor('#E0E0E0');
+        $cardDraw->setStrokeWidth(1);
+        $cardDraw->roundRectangle($currentX, $currentY, $currentX + $cardWidth, $currentY + $cardHeight, 8, 8);
+        $image->drawImage($cardDraw);
+        
+        // 顶部色条
+        $cardDraw->setFillColor('#66BB6A');
+        $cardDraw->rectangle($currentX + 1, $currentY + 1, $currentX + $cardWidth - 1, $currentY + 4);
+        $image->drawImage($cardDraw);
+        
+        // 标题
+        $draw->setFillColor('#757575');
+        $draw->setFontSize(10);
+        $image->annotateImage($draw, $currentX + 12, $currentY + 25, 0, $key);
+        
+        // 数值
+        $displayValue = mb_strlen($value) > 35 ? mb_substr($value, 0, 32) . '...' : $value;
+        $draw->setFillColor('#212121');
+        $draw->setFontSize(11);
+        $image->annotateImage($draw, $currentX + 12, $currentY + 48, 0, $displayValue);
+        
+        $col++;
+        if ($col >= $cols) {
+            $col = 0;
+            $currentX = $x;
+            $currentY += $cardHeight + $spacing;
+        } else {
+            $currentX += $cardWidth + $spacing;
+        }
+    }
     
-    // 顶部色条
-    $cardDraw->setFillColor('#66BB6A');
-    $cardDraw->rectangle($x + 1, $y + 1, $x + $width - 51, $y + 5);
-    $image->drawImage($cardDraw);
+    if ($col > 0) {
+        $currentY += $cardHeight + $spacing;
+    }
     
-    // 标题
-    $draw->setFillColor('#66BB6A');
-    $draw->setFontSize(13);
-    $draw->setFontWeight(600);
-    $image->annotateImage($draw, $x + 20, $y + 28, 0, "IP信息");
-    
-    // 内容文字
-    $draw->setFillColor('#212121');
-    $draw->setFontSize(11);
-    $draw->setFontWeight(400);
-    $image->annotateImage($draw, $x + 20, $y + 50, 0, $text);
-    
-    return $y + $cardHeight + 15;
+    return $currentY;
 }
 
 function drawStreamingGrid($image, $draw, $x, $y, $width, $metrics) {
-    // 单个大卡片，横向显示所有流媒体服务
-    $parts = [];
+    // 多个小卡片，每行6个
+    $cardWidth = 185;
+    $cardHeight = 60;
+    $spacing = 8;
+    $cols = 6;
+    $col = 0;
+    $currentX = $x;
+    $currentY = $y;
+    
     foreach ($metrics as $service => $status) {
         if ($service === '汇总') continue;
-        $icon = ($status === '解锁' || $status === '✓') ? '✓' : '✗';
-        $parts[] = "$service: $icon";
+        
+        $isSuccess = ($status === '✓' || $status === '解锁');
+        $bgColor = $isSuccess ? '#E8F5E9' : '#FFEBEE';
+        $iconColor = $isSuccess ? '#4CAF50' : '#F44336';
+        $icon = $isSuccess ? '✓' : '✗';
+        
+        // 绘制卡片背景
+        $cardDraw = new ImagickDraw();
+        $cardDraw->setFillColor($bgColor);
+        $cardDraw->setStrokeColor('#E0E0E0');
+        $cardDraw->setStrokeWidth(1);
+        $cardDraw->roundRectangle($currentX, $currentY, $currentX + $cardWidth, $currentY + $cardHeight, 8, 8);
+        $image->drawImage($cardDraw);
+        
+        // 图标
+        $draw->setFillColor($iconColor);
+        $draw->setFontSize(20);
+        $image->annotateImage($draw, $currentX + 15, $currentY + 38, 0, $icon);
+        
+        // 服务名
+        $draw->setFillColor('#212121');
+        $draw->setFontSize(11);
+        $image->annotateImage($draw, $currentX + 45, $currentY + 38, 0, $service);
+        
+        $col++;
+        if ($col >= $cols) {
+            $col = 0;
+            $currentX = $x;
+            $currentY += $cardHeight + $spacing;
+        } else {
+            $currentX += $cardWidth + $spacing;
+        }
     }
-    $text = implode(' | ', $parts);
     
-    $cardHeight = 70;
+    if ($col > 0) {
+        $currentY += $cardHeight + $spacing;
+    }
     
-    // 绘制卡片背景
-    $cardDraw = new ImagickDraw();
-    $cardDraw->setFillColor('#FFFFFF');
-    $cardDraw->setStrokeColor('#E0E0E0');
-    $cardDraw->setStrokeWidth(1);
-    $cardDraw->roundRectangle($x, $y, $x + $width - 50, $y + $cardHeight, 10, 10);
-    $image->drawImage($cardDraw);
-    
-    // 顶部色条
-    $cardDraw->setFillColor('#AB47BC');
-    $cardDraw->rectangle($x + 1, $y + 1, $x + $width - 51, $y + 5);
-    $image->drawImage($cardDraw);
-    
-    // 标题
-    $draw->setFillColor('#AB47BC');
-    $draw->setFontSize(13);
-    $draw->setFontWeight(600);
-    $image->annotateImage($draw, $x + 20, $y + 28, 0, "流媒体解锁");
-    
-    // 内容文字
-    $draw->setFillColor('#212121');
-    $draw->setFontSize(11);
-    $draw->setFontWeight(400);
-    $image->annotateImage($draw, $x + 20, $y + 50, 0, $text);
-    
-    return $y + $cardHeight + 15;
+    return $currentY;
 }
 
 function drawStreamingGridOld($image, $draw, $x, $y, $width, $metrics) {
