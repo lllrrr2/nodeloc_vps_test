@@ -477,16 +477,31 @@ generate_markdown_output() {
 
     # 上传文件 获取回调
     local plain_uploaded_file=$(cat "${temp_output_file}" | curl -s -X POST --data-binary @- "${CLOUD_SERVICE_BASE}")
-    local plain_uploaded_file_path=$(echo "$plain_uploaded_file" | grep -oP "(?<=${CLOUD_SERVICE_BASE}).*") 
+    local plain_uploaded_file_path=$(echo "$plain_uploaded_file" | head -n 1 | grep -oP "(?<=${CLOUD_SERVICE_BASE}).*") 
     local plain_uploaded_file_filename=$(basename "${plain_uploaded_file_path}")
+    
+    # 提取图片链接
+    local image_url=$(echo "$plain_uploaded_file" | grep "^Image:" | sed 's/^Image: //')
 
     if [ -n "$plain_uploaded_file" ]; then
         local base_url=$(echo "${CLOUD_SERVICE_BASE}" | sed 's:/*$::')
         local remote_url="${base_url}/result${plain_uploaded_file_path}"
-        echo -e "${remote_url}\r\nPlain ${plain_uploaded_file}" > "${plain_uploaded_file_filename}.url"
+        local first_line=$(echo "$plain_uploaded_file" | head -n 1)
+        
+        echo -e "${remote_url}\r\nPlain ${first_line}" > "${plain_uploaded_file_filename}.url"
+        
+        if [ -n "$image_url" ]; then
+            echo -e "\r\n${image_url}" >> "${plain_uploaded_file_filename}.url"
+        fi
+        
         echo "测试结果已上传，您可以在以下链接查看："
         echo "${remote_url}"
-        echo "Plain ${plain_uploaded_file}"
+        echo "Plain ${first_line}"
+        
+        if [ -n "$image_url" ]; then
+            echo -e "${GREEN}图片报告: ${image_url}${NC}"
+        fi
+        
         echo "结果链接已保存到 ${plain_uploaded_file_filename}.url"
     else
         echo "上传失败. 结果已保存在本地文件 ${temp_output_file}"

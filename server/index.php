@@ -57,5 +57,10 @@ if (file_put_contents($filePath, $uploadData) === false) {
     die("Error 500: Failed to save the file.");
 }
 
-// 返回文件 URL
-echo $baseUrl . "/$year/$month/" . $fileName;
+// 构造文件和图片 URL
+$fileUrl = $baseUrl . "/$year/$month/" . $fileName;
+$imageUrl = $baseUrl . "/image.php?file=" . urlencode($fileName) . "&year=" . urlencode($year) . "&month=" . urlencode($month);
+
+// 返回文件 URL 和图片 URL
+echo $fileUrl . "\n";
+echo "Image: " . $imageUrl;

@@ -40,6 +40,30 @@ curl -o Nlbench.sh https://ghfast.top/https://raw.githubusercontent.com/nodeloc/
 ![image](https://github.com/user-attachments/assets/543a7741-943d-412c-9db7-58e5c66754c2)
 ![image](https://github.com/user-attachments/assets/8f7b5cf7-a566-422b-9aca-56a7fbb237be)
 
+### 🆕 图片报告功能
+
+测试完成后，脚本会自动生成精美的图片报告，方便分享：
+
+**特点：**
+- 📊 自动解析测试结果中的关键指标
+- 🎨 NodeLoc 品牌配色，美观大方
+- 📱 自适应高度，内容清晰展示
+- 🔗 一键复制图片链接
+
+**使用方式：**
+1. 运行测试脚本后，结果上传成功时会显示图片链接
+2. 直接在论坛、社交媒体中使用图片链接分享
+3. 支持 BBCode、Markdown、HTML 等多种格式
+
+**图片内容包含：**
+- YABS 测试（CPU、内存、磁盘）
+- IP 质量检测
+- 流媒体解锁状态
+- 多线程/单线程测速
+- 响应延迟测试
+
+详细说明请查看：[图片生成API文档](server/IMAGE_API.md)
+
 ## 免责声明
 * NodeLoc聚合测评脚本属于自用分享工具，本脚本仅为各类脚本聚合。
 * 工具中所有脚本均来自互联网，未对官方脚本文件进行任何更改，不对脚本安全性负责。如果你比较在意安全，请勿使用各类一键脚本。
