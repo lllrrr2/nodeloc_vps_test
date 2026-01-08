@@ -74,16 +74,49 @@ function generateSVGImage($data) {
     $svg[] = '<?xml version="1.0" encoding="UTF-8"?>';
     $svg[] = '<svg xmlns="http://www.w3.org/2000/svg" width="' . $width . '" height="' . $estimatedHeight . '" viewBox="0 0 ' . $width . ' ' . $estimatedHeight . '">';
     
-    // 定义样式
+    // 定义样式和渐变
     $svg[] = '<defs>';
+    
+    // 渐变定义
+    $svg[] = '<linearGradient id="headerGradient" x1="0%" y1="0%" x2="100%" y2="0%">';
+    $svg[] = '  <stop offset="0%" style="stop-color:#1A73E8;stop-opacity:1" />';
+    $svg[] = '  <stop offset="100%" style="stop-color:#4A90E2;stop-opacity:1" />';
+    $svg[] = '</linearGradient>';
+    
+    $svg[] = '<linearGradient id="footerGradient" x1="0%" y1="0%" x2="100%" y2="0%">';
+    $svg[] = '  <stop offset="0%" style="stop-color:#0D47A1;stop-opacity:1" />';
+    $svg[] = '  <stop offset="100%" style="stop-color:#1565C0;stop-opacity:1" />';
+    $svg[] = '</linearGradient>';
+    
+    $svg[] = '<linearGradient id="cardGradient" x1="0%" y1="0%" x2="0%" y2="100%">';
+    $svg[] = '  <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />';
+    $svg[] = '  <stop offset="100%" style="stop-color:#FAFAFA;stop-opacity:1" />';
+    $svg[] = '</linearGradient>';
+    
+    // 阴影滤镜
+    $svg[] = '<filter id="cardShadow" x="-50%" y="-50%" width="200%" height="200%">';
+    $svg[] = '  <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>';
+    $svg[] = '  <feOffset dx="0" dy="2" result="offsetblur"/>';
+    $svg[] = '  <feComponentTransfer><feFuncA type="linear" slope="0.15"/></feComponentTransfer>';
+    $svg[] = '  <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>';
+    $svg[] = '</filter>';
+    
+    $svg[] = '<filter id="headerShadow" x="-50%" y="-50%" width="200%" height="200%">';
+    $svg[] = '  <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>';
+    $svg[] = '  <feOffset dx="0" dy="3" result="offsetblur"/>';
+    $svg[] = '  <feComponentTransfer><feFuncA type="linear" slope="0.2"/></feComponentTransfer>';
+    $svg[] = '  <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>';
+    $svg[] = '</filter>';
+    
+    // 样式
     $svg[] = '<style type="text/css"><![CDATA[';
     $svg[] = '@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700&display=swap");';
     $svg[] = 'text { font-family: "Noto Sans SC", sans-serif; }';
-    $svg[] = '.title { font-size: 28px; font-weight: 700; fill: #FFFFFF; }';
-    $svg[] = '.subtitle { font-size: 14px; font-weight: 400; fill: #FFFFFF; }';
+    $svg[] = '.title { font-size: 28px; font-weight: 700; fill: #FFFFFF; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }';
+    $svg[] = '.subtitle { font-size: 14px; font-weight: 400; fill: rgba(255,255,255,0.9); }';
     $svg[] = '.section-title { font-size: 18px; font-weight: 700; fill: #1A73E8; }';
-    $svg[] = '.card-label { font-size: 11px; fill: #757575; }';
-    $svg[] = '.card-value { font-size: 13px; fill: #212121; }';
+    $svg[] = '.card-label { font-size: 11px; fill: #757575; font-weight: 500; }';
+    $svg[] = '.card-value { font-size: 13px; fill: #212121; font-weight: 600; }';
     $svg[] = '.card-value-large { font-size: 13px; font-weight: 600; fill: #212121; }';
     $svg[] = '.icon { font-size: 22px; }';
     $svg[] = '.footer-text { font-size: 11px; fill: #FFFFFF; }';
@@ -167,11 +200,16 @@ function generateSVGImage($data) {
 function svgDrawHeader(&$svg, $width, $timestamp, $y) {
     $headerHeight = 90;
     
-    // 背景
-    $svg[] = '<rect x="0" y="' . $y . '" width="' . $width . '" height="' . $headerHeight . '" fill="#1A73E8"/>';
+    // 渐变背景
+    $svg[] = '<rect x="0" y="' . $y . '" width="' . $width . '" height="' . $headerHeight . '" fill="url(#headerGradient)" filter="url(#headerShadow)"/>';
     
-    // 装饰圆圈
-    $svg[] = '<circle cx="' . ($width - 60) . '" cy="' . ($y + 40) . '" r="20" fill="#FFA726"/>';
+    // 装饰圆圈带渐变
+    $svg[] = '<defs><radialGradient id="circleGradient"><stop offset="0%" style="stop-color:#FFB74D"/><stop offset="100%" style="stop-color:#FF9800"/></radialGradient></defs>';
+    $svg[] = '<circle cx="' . ($width - 60) . '" cy="' . ($y + 40) . '" r="20" fill="url(#circleGradient)" opacity="0.9"/>';
+    $svg[] = '<circle cx="' . ($width - 60) . '" cy="' . ($y + 40) . '" r="15" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.5"/>';
+    
+    // 装饰线条
+    $svg[] = '<line x1="60" y1="' . ($y + 75) . '" x2="' . ($width - 100) . '" y2="' . ($y + 75) . '" stroke="#FFFFFF" stroke-width="1" opacity="0.3"/>';
     
     // 标题
     $svg[] = '<text x="75" y="' . ($y + 40) . '" class="title">VPS Performance Test Report</text>';
@@ -213,11 +251,12 @@ function svgDrawInfoCards(&$svg, $x, $y, $metrics) {
     $currentY = $y;
     
     foreach ($metrics as $key => $value) {
-        // 卡片背景
-        $svg[] = '<rect x="' . $currentX . '" y="' . $currentY . '" width="' . $cardWidth . '" height="' . $cardHeight . '" rx="8" fill="#FFFFFF" stroke="#E0E0E0" stroke-width="1"/>';
+        // 卡片背景带阴影
+        $svg[] = '<rect x="' . $currentX . '" y="' . $currentY . '" width="' . $cardWidth . '" height="' . $cardHeight . '" rx="8" fill="url(#cardGradient)" stroke="#E3F2FD" stroke-width="1.5" filter="url(#cardShadow)"/>';
         
-        // 顶部色条
-        $svg[] = '<rect x="' . ($currentX + 1) . '" y="' . ($currentY + 1) . '" width="' . ($cardWidth - 2) . '" height="3" fill="#42A5F5"/>';
+        // 顶部渐变色条
+        $svg[] = '<defs><linearGradient id="barBlue' . $col . '" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#42A5F5"/><stop offset="100%" style="stop-color:#64B5F6"/></linearGradient></defs>';
+        $svg[] = '<rect x="' . ($currentX + 1) . '" y="' . ($currentY + 1) . '" width="' . ($cardWidth - 2) . '" height="4" rx="8 8 0 0" fill="url(#barBlue' . $col . ')"/>';
         
         // 标签
         $svg[] = '<text x="' . ($currentX + 12) . '" y="' . ($currentY + 25) . '" class="card-label">' . htmlspecialchars($key) . '</text>';
@@ -253,8 +292,9 @@ function svgDrawIPQualityCards(&$svg, $x, $y, $metrics) {
     $currentY = $y;
     
     foreach ($metrics as $key => $value) {
-        $svg[] = '<rect x="' . $currentX . '" y="' . $currentY . '" width="' . $cardWidth . '" height="' . $cardHeight . '" rx="8" fill="#FFFFFF" stroke="#E0E0E0" stroke-width="1"/>';
-        $svg[] = '<rect x="' . ($currentX + 1) . '" y="' . ($currentY + 1) . '" width="' . ($cardWidth - 2) . '" height="3" fill="#66BB6A"/>';
+        $svg[] = '<rect x="' . $currentX . '" y="' . $currentY . '" width="' . $cardWidth . '" height="' . $cardHeight . '" rx="8" fill="url(#cardGradient)" stroke="#E8F5E9" stroke-width="1.5" filter="url(#cardShadow)"/>';
+        $svg[] = '<defs><linearGradient id="barGreen' . $col . '" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#66BB6A"/><stop offset="100%" style="stop-color:#81C784"/></linearGradient></defs>';
+        $svg[] = '<rect x="' . ($currentX + 1) . '" y="' . ($currentY + 1) . '" width="' . ($cardWidth - 2) . '" height="4" rx="8 8 0 0" fill="url(#barGreen' . $col . ')"/>';
         
         $svg[] = '<text x="' . ($currentX + 12) . '" y="' . ($currentY + 25) . '" class="card-label">' . htmlspecialchars($key) . '</text>';
         
@@ -294,10 +334,13 @@ function svgDrawStreamingGrid(&$svg, $x, $y, $metrics) {
         $bgColor = $isSuccess ? '#E8F5E9' : '#FFEBEE';
         $iconColor = $isSuccess ? '#4CAF50' : '#F44336';
         $icon = $isSuccess ? '✓' : '✗';
+        $strokeColor = $isSuccess ? '#81C784' : '#EF9A9A';
         
-        $svg[] = '<rect x="' . $currentX . '" y="' . $currentY . '" width="' . $cardWidth . '" height="' . $cardHeight . '" rx="8" fill="' . $bgColor . '" stroke="#E0E0E0" stroke-width="1"/>';
+        $svg[] = '<rect x="' . $currentX . '" y="' . $currentY . '" width="' . $cardWidth . '" height="' . $cardHeight . '" rx="8" fill="' . $bgColor . '" stroke="' . $strokeColor . '" stroke-width="1.5" filter="url(#cardShadow)"/>';
         
-        $svg[] = '<text x="' . ($currentX + 15) . '" y="' . ($currentY + 38) . '" class="icon" fill="' . $iconColor . '">' . $icon . '</text>';
+        // 图标背景圆圈
+        $svg[] = '<circle cx="' . ($currentX + 22) . '" cy="' . ($currentY + 30) . '" r="12" fill="' . $iconColor . '" opacity="0.15"/>';
+        $svg[] = '<text x="' . ($currentX + 15) . '" y="' . ($currentY + 38) . '" class="icon" fill="' . $iconColor . '" font-weight="700">' . $icon . '</text>';
         $svg[] = '<text x="' . ($currentX + 45) . '" y="' . ($currentY + 38) . '" class="card-value">' . htmlspecialchars($service) . '</text>';
         
         $col++;
@@ -357,7 +400,9 @@ function svgDrawSpeedBars(&$svg, $x, $y, $width, $metrics) {
         $barWidth = min(($numValue / 1000) * ($width - 200), $width - 200);
         if ($barWidth < 10) $barWidth = 10;
         
-        $svg[] = '<rect x="' . ($x + 80) . '" y="' . $currentY . '" width="' . $barWidth . '" height="' . $barHeight . '" rx="4" fill="#E3F2FD"/>';
+        $gradientId = 'speedGradient' . $currentY;
+        $svg[] = '<defs><linearGradient id="' . $gradientId . '" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#42A5F5"/><stop offset="100%" style="stop-color:#1E88E5"/></linearGradient></defs>';
+        $svg[] = '<rect x="' . ($x + 80) . '" y="' . $currentY . '" width="' . $barWidth . '" height="' . $barHeight . '" rx="4" fill="url(#' . $gradientId . ')" filter="url(#cardShadow)"/>';
         
         $labelText = str_replace('平均', '', $key);
         $svg[] = '<text x="' . ($x + 5) . '" y="' . ($currentY + 17) . '" style="font-size: 10px; fill: #212121;">' . htmlspecialchars($labelText) . '</text>';
@@ -443,7 +488,8 @@ function svgDrawRouteGrid(&$svg, $x, $y, $metrics) {
 function svgDrawFooter(&$svg, $width, $y) {
     $footerHeight = 40;
     
-    $svg[] = '<rect x="0" y="' . $y . '" width="' . $width . '" height="' . $footerHeight . '" fill="#0D47A1"/>';
+    $svg[] = '<rect x="0" y="' . $y . '" width="' . $width . '" height="' . $footerHeight . '" fill="url(#footerGradient)"/>';
+    $svg[] = '<line x1="0" y1="' . $y . '" x2="' . $width . '" y2="' . $y . '" stroke="#1565C0" stroke-width="2"/>';
     $svg[] = '<text x="25" y="' . ($y + 25) . '" class="footer-text">Powered by bench.nodeloc.cc</text>';
     $svg[] = '<text x="' . ($width - 150) . '" y="' . ($y + 25) . '" class="footer-text">NodeLoc.com</text>';
 }
