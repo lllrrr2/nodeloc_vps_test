@@ -576,46 +576,15 @@
             btn.disabled = true;
             
             try {
-                // 直接获取PNG格式
-                let pngUrl = previewImg.src;
-                // 添加format=png参数
-                if (pngUrl.includes('?')) {
-                    pngUrl = pngUrl + '&format=png';
-                } else {
-                    pngUrl = pngUrl + '?format=png';
-                }
-                
-                console.log('Fetching PNG from:', pngUrl);
-                
-                // 获取PNG blob
-                const response = await fetch(pngUrl);
-                console.log('Response status:', response.status);
-                console.log('Content-Type:', response.headers.get('content-type'));
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch PNG: ' + response.status);
-                }
-                
-                const blob = await response.blob();
-                console.log('Blob size:', blob.size, 'type:', blob.type);
-                
-                if (blob.size === 0) {
-                    throw new Error('Empty PNG blob');
-                }
-                
-                // 确保blob类型正确
-                const pngBlob = new Blob([blob], { type: 'image/png' });
-                
-                console.log('Attempting clipboard write...');
+                // 使用客户端Canvas转换（和Download PNG相同的方法）
+                const blob = await convertSvgToPng(previewImg.src);
                 
                 // 复制到剪贴板
                 await navigator.clipboard.write([
                     new ClipboardItem({
-                        'image/png': pngBlob
+                        'image/png': blob
                     })
                 ]);
-                
-                console.log('Clipboard write successful!');
                 
                 btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
                 setTimeout(() => {
@@ -624,13 +593,11 @@
                 }, 2000);
             } catch (error) {
                 console.error('Copy failed:', error);
-                console.error('Error name:', error.name);
-                console.error('Error message:', error.message);
                 
                 btn.innerHTML = origHtml;
                 btn.disabled = false;
                 
-                alert('复制失败: ' + error.message + '\n\n请检查控制台查看详细错误，或使用Download PNG按钮。');
+                alert('复制失败: ' + error.message + '\n\n请尝试使用Download PNG按钮。');
             }
         });
 

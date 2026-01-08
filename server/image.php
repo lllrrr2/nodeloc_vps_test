@@ -63,11 +63,27 @@ function convertSvgToPng($svgContent) {
     }
     
     try {
+        // 替换Google Fonts为系统字体，确保中文显示
+        $svgContent = str_replace(
+            '@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap");',
+            '',
+            $svgContent
+        );
+        
+        // 修改字体family为系统支持的字体
+        $svgContent = str_replace(
+            '* { font-family: "Inter", -apple-system, sans-serif; }',
+            '* { font-family: "Arial", "Helvetica", "Microsoft YaHei", "SimHei", "STHeiti", sans-serif; }',
+            $svgContent
+        );
+        
         $imagick = new Imagick();
+        $imagick->setResolution(300, 300); // 提高分辨率
         $imagick->readImageBlob($svgContent);
         $imagick->setImageFormat('png');
         $imagick->setImageBackgroundColor('#F1F5F9');
         $imagick->setImageAlphaChannel(Imagick::ALPHACHANNEL_REMOVE);
+        $imagick->setImageCompressionQuality(95);
         
         header('Content-Type: image/png');
         echo $imagick->getImageBlob();
