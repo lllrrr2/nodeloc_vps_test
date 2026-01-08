@@ -623,7 +623,7 @@ function drawResponseCard(&$svg, $x, $y, $metrics) {
 
 function drawRouteCards(&$svg, $x, $y, $metrics) {
     $w = 225;
-    $h = 90;
+    $h = 80;
     $gap = 10;
     $cols = 5;
     $col = 0;
