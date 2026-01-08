@@ -482,7 +482,7 @@
             }
             
             // Generate image URL (SVG version)
-            const imageUrl = `/image_svg.php?file=${encodeURIComponent(fileName)}&year=${year}&month=${month}`;
+            const imageUrl = `/image.php?file=${encodeURIComponent(fileName)}&year=${year}&month=${month}`;
             
             // Show loading state
             const btn = document.getElementById('generateImageBtn');
@@ -617,7 +617,7 @@
             const year = parts[0];
             const month = parts[1];
             const fileName = parts[2];
-            const imgUrl = `image_svg.php?file=${encodeURIComponent(fileName)}&year=${year}&month=${month}`;
+            const imgUrl = `image.php?file=${encodeURIComponent(fileName)}&year=${year}&month=${month}`;
             
             const img = document.getElementById('previewImg');
             img.onload = () => document.getElementById('imagePreview').classList.remove('d-none');
