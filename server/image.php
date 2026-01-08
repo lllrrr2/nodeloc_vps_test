@@ -638,15 +638,11 @@ function drawRouteCards(&$svg, $x, $y, $metrics) {
         $quality = $data['quality'] ?? '普通线路';
         $isHQ = (strpos($quality, '优质') !== false);
         
-        // 运营商颜色
-        if (strpos($label, '电信') !== false) {
-            $color = $isHQ ? '#2563EB' : '#60A5FA';
-        } elseif (strpos($label, '联通') !== false) {
-            $color = $isHQ ? '#059669' : '#10B981';
-        } elseif (strpos($label, '移动') !== false) {
-            $color = $isHQ ? '#DC2626' : '#F87171';
+        // 根据线路质量设置颜色
+        if ($isHQ) {
+            $color = '#10B981';  // 优质线路：绿色
         } else {
-            $color = '#64748B';
+            $color = '#94A3B8';  // 普通线路：灰色
         }
         
         $svg[] = '<g filter="url(#shadow)">';
