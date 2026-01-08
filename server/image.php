@@ -822,6 +822,13 @@ function drawInfoCard($image, $x, $y, $width, $height, $icon, $title, $value, $c
  * 绘制圆角矩形
  */
 function drawRoundedRect($image, $x1, $y1, $x2, $y2, $radius, $fillColor, $borderColor) {
+    // 确保所有坐标都是整数
+    $x1 = (int)round($x1);
+    $y1 = (int)round($y1);
+    $x2 = (int)round($x2);
+    $y2 = (int)round($y2);
+    $radius = (int)round($radius);
+    
     // 填充主体
     imagefilledrectangle($image, $x1 + $radius, $y1, $x2 - $radius, $y2, $fillColor);
     imagefilledrectangle($image, $x1, $y1 + $radius, $x2, $y2 - $radius, $fillColor);
