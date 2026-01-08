@@ -11,11 +11,14 @@ error_log("=== Imagick Image generation started ===");
 error_log("GET: " . print_r($_GET, true));
 
 // 检查Imagick扩展
+error_log("Checking Imagick extension...");
 if (!extension_loaded('imagick')) {
+    error_log("ERROR: Imagick extension not loaded");
     header('Content-Type: text/plain; charset=utf-8');
     http_response_code(500);
     die("错误: 需要安装 php-imagick 扩展\n安装: sudo apt-get install php-imagick && sudo systemctl restart php-fpm nginx");
 }
+error_log("Imagick extension OK");
 
 mb_internal_encoding('UTF-8');
 header('Content-Type: image/png');
@@ -42,19 +45,29 @@ if (!file_exists($fullPath)) {
 
 $content = file_get_contents($fullPath);
 if ($content === false) {
+    error_log("ERROR: Failed to read file");
     generateErrorImage("错误: 无法读取文件");
     exit;
 }
 
-$data = parseTestResults($content);
-error_log("Parsed " . count($data['sections']) . " sections");
+error_log("File read OK, length: " . strlen($content));
 
 try {
+    error_log("Starting parseTestResults...");
+    $data = parseTestResults($content);
+    error_log("Parsed " . count($data['sections']) . " sections");
+    
+    error_log("Starting generateResultImage...");
     generateResultImage($data);
     error_log("=== Image generated successfully ===");
 } catch (Exception $e) {
-    error_log("ERROR: " . $e->getMessage());
+    error_log("Exception: " . $e->getMessage());
+    error_log("Trace: " . $e->getTraceAsString());
     generateErrorImage("生成失败: " . $e->getMessage());
+} catch (Error $e) {
+    error_log("PHP Error: " . $e->getMessage());
+    error_log("Trace: " . $e->getTraceAsString());
+    generateErrorImage("PHP错误: " . $e->getMessage());
 }
 
 // ============ 解析函数 ============
@@ -205,13 +218,17 @@ function parseRouteTrace($content) {
     
     foreach ($matches as $match) {
         $routeNum = $match[1];
-        $destination = $match[2];
-        $metrics["路由 $routeNum"] = $destination;
-    }
+    error_log("[generateResultImage] Start");
+    $width = 1200;
+    $padding = 25;
     
-    return $metrics;
-}
-
+    // 创建draw对象
+    error_log("[generateResultImage] Creating ImagickDraw");
+    $draw = new ImagickDraw();
+    error_log("[generateResultImage] ImagickDraw created");
+    
+    // 查找中文字体
+    error_log("[generateResultImage] Finding Chinese font");
 // ============ 图片生成 ============
 
 function generateResultImage($data) {
@@ -239,9 +256,13 @@ function generateResultImage($data) {
     $estimatedHeight += count($sections['多线程测速']['metrics'] ?? []) > 0 ? 200 : 0;
     $estimatedHeight += count($sections['单线程测速']['metrics'] ?? []) > 0 ? 200 : 0;
     $estimatedHeight += count($sections['响应']['metrics'] ?? []) > 0 ? 100 : 0;
-    $estimatedHeight += count($sections['回程路由']['metrics'] ?? []) > 0 ? 350 : 0;
-    $estimatedHeight += 100; // 底部
-    
+    error_log("[generateResultImage] Creating Imagick object, size: {$width}x{$estimatedHeight}");
+    $image = new Imagick();
+    error_log("[generateResultImage] Imagick created");
+    $image->newImage($width, $estimatedHeight, new ImagickPixel('#F8F9FA'));
+    error_log("[generateResultImage] Image initialized");
+    $image->setImageFormat('png');
+    error_log("[generateResultImage] Format set to PNG"
     // 创建图片
     $image = new Imagick();
     $image->newImage($width, $estimatedHeight, new ImagickPixel('#F8F9FA'));
