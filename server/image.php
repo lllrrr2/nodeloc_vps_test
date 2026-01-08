@@ -490,6 +490,7 @@ function drawIPCards(&$svg, $x, $y, $metrics) {
     foreach ($metrics as $key => $value) {
         // 根据风险评分动态设置颜色
         $accentColor = '#10B981'; // 默认绿色
+        $bgColor = '#ECFDF5'; // 默认背景：浅绿
         if ($key === '风险') {
             // 提取风险评分数字
             preg_match('/(\d+)/', $value, $match);
@@ -497,20 +498,27 @@ function drawIPCards(&$svg, $x, $y, $metrics) {
                 $score = intval($match[1]);
                 if ($score <= 10) {
                     $accentColor = '#10B981'; // 极低风险：绿色
+                    $bgColor = '#ECFDF5'; // 浅绿背景
                 } elseif ($score <= 30) {
                     $accentColor = '#34D399'; // 低风险：浅绿
+                    $bgColor = '#D1FAE5'; // 绿色背景
                 } elseif ($score <= 50) {
                     $accentColor = '#FBBF24'; // 中等风险：黄色
+                    $bgColor = '#FEF3C7'; // 黄色背景
                 } elseif ($score <= 70) {
                     $accentColor = '#FB923C'; // 较高风险：橙色
+                    $bgColor = '#FFEDD5'; // 橙色背景
                 } else {
                     $accentColor = '#EF4444'; // 极高风险：红色
+                    $bgColor = '#FEE2E2'; // 红色背景
                 }
             }
+        } else {
+            $bgColor = 'url(#cardBg)'; // 非风险卡片使用默认渐变
         }
         
         $svg[] = '<g filter="url(#shadow)">';
-        $svg[] = '<rect x="' . $cx . '" y="' . $cy . '" width="' . $w . '" height="' . $h . '" rx="12" fill="url(#cardBg)"/>';
+        $svg[] = '<rect x="' . $cx . '" y="' . $cy . '" width="' . $w . '" height="' . $h . '" rx="12" fill="' . $bgColor . '"/>';
         $svg[] = '<rect x="' . $cx . '" y="' . $cy . '" width="' . $w . '" height="4" rx="12 12 0 0" fill="' . $accentColor . '"/>';
         $svg[] = '</g>';
         
