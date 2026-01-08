@@ -342,19 +342,7 @@ function generateResultImage($data) {
 }
 
 function drawHeader($image, $draw, $width, $timestamp) {
-    $headerHeight = 90;  // 从120减到90
-    
-    // 设置字体
-    $fontFile = findChineseFont();
-    error_log("[drawHeader] Font file: " . ($fontFile ? $fontFile : 'NULL'));
-    if ($fontFile) {
-        try {
-            $draw->setFont($fontFile);
-            error_log("[drawHeader] Font set successfully");
-        } catch (Exception $e) {
-            error_log("[drawHeader] Font set failed: " . $e->getMessage());
-        }
-    }
+    $headerHeight = 90;
     
     // 渐变背景
     $headerDraw = new ImagickDraw();
@@ -362,26 +350,30 @@ function drawHeader($image, $draw, $width, $timestamp) {
     $headerDraw->rectangle(0, 0, $width, $headerHeight);
     $image->drawImage($headerDraw);
     
-    // 确保字体已设置
+    // 设置字体用于文本
+    $fontFile = findChineseFont();
+    error_log("[drawHeader] Font file: " . ($fontFile ? $fontFile : 'NULL'));
+    
+    // 创建新的draw对象专门用于文本
+    $textDraw = new ImagickDraw();
     if ($fontFile) {
-        $draw->setFont($fontFile);
+        try {
+            $textDraw->setFont($fontFile);
+            error_log("[drawHeader] Font set successfully");
+        } catch (Exception $e) {
+            error_log("[drawHeader] Font set failed: " . $e->getMessage());
+        }
     }
     
     // 标题
-    $draw->setFillColor('#FFFFFF');
-    $draw->setFontSize(24);  // 从28减到24
-    $draw->setFontWeight(700);
-    $image->annotateImage($draw, 75, 40, 0, "VPS 性能测试报告");
+    $textDraw->setFillColor('#FFFFFF');
+    $textDraw->setFontSize(24);
+    $image->annotateImage($textDraw, 75, 40, 0, "VPS 性能测试报告");
     error_log("[drawHeader] Title drawn at (75, 40)");
     
-    // 副标题 - 重新设置字体
-    if ($fontFile) {
-        $draw->setFont($fontFile);
-    }
-    $draw->setFillColor('#FFFFFF');
-    $draw->setFontSize(12);  // 从14减到12
-    $draw->setFontWeight(400);
-    $image->annotateImage($draw, 75, 65, 0, "生成时间: " . $timestamp);
+    // 副标题 - 使用同一个textDraw对象
+    $textDraw->setFontSize(12);
+    $image->annotateImage($textDraw, 75, 65, 0, "生成时间: " . $timestamp);
     error_log("[drawHeader] Subtitle drawn");
     
     // 装饰圆圈
