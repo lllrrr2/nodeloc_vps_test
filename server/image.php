@@ -101,20 +101,80 @@ function parseYABS($content) {
     if (preg_match('/Total\s*\|\s*(\d+\.?\d*)\s*(MB\/s|GB\/s)/i', $content, $match)) {
         $metrics['磁盘IO'] = $match[1] . ' ' . $match[2];
     }
+    
+    // Geekbench跑分
+    if (preg_match('/Single Core\s*\|\s*(\d+)/i', $content, $match)) {
+        $metrics['单核跑分'] = $match[1];
+    }
+    if (preg_match('/Multi Core\s*\|\s*(\d+)/i', $content, $match)) {
+        $metrics['多核跑分'] = $match[1];
+    }
+    
+    // 网络状态
+    if (preg_match('/IPv4\/IPv6\s*:\s*([^\n]+)/i', $content, $match)) {
+        $metrics['网络'] = trim(str_replace(['✔', '❌'], ['', ''], $match[1]));
+    }
+    
+    // 位置信息
+    if (preg_match('/Location\s*:\s*([^,]+),\s*([^(]+)\(([^)]+)\)/i', $content, $match)) {
+        $metrics['位置'] = trim($match[1]) . ', ' . trim($match[3]);
+    }
+    
+    // VM类型
+    if (preg_match('/VM Type\s*:\s*(.+)/i', $content, $match)) {
+        $metrics['虚拟化'] = trim($match[1]);
+    }
+    
     return $metrics;
 }
 
 function parseIPQuality($content) {
     $metrics = [];
-    if (preg_match('/IP类型[：:]*\s*(.+)/u', $content, $match)) {
-        $metrics['IP类型'] = trim($match[1]);
+    
+    // 提取IPv4和IPv6的基础信息（取第一个检测到的）
+    if (preg_match('/IP质量体检报告：([\d\.\*:]+)/u', $content, $match)) {
+        $metrics['检测IP'] = trim($match[1]);
     }
+    
     if (preg_match('/自治系统号[：:]*\s*(AS\d+)/u', $content, $match)) {
         $metrics['ASN'] = trim($match[1]);
     }
-    if (preg_match('/IP2Location[：:]*\s*(\d+)\|(.+)/u', $content, $match)) {
-        $metrics['风险评分'] = $match[1];
+    
+    if (preg_match('/组织[：:]*\s*(.+)/u', $content, $match)) {
+        $org = trim($match[1]);
+        if ($org && $org !== 'N/A') {
+            $metrics['组织'] = $org;
+        }
     }
+    
+    if (preg_match('/使用地[：:]*\s*\[([A-Z]+)\]([^,]+)/u', $content, $match)) {
+        $metrics['使用地'] = trim($match[2]);
+    }
+    
+    if (preg_match('/IP类型[：:]*\s*(.+)/u', $content, $match)) {
+        $metrics['IP类型'] = trim($match[1]);
+    }
+    
+    // 提取风险评分（取最主要的几个）
+    if (preg_match('/IP2Location[：:]*\s*(\d+)\|([^\n]+)/u', $content, $match)) {
+        $metrics['风险'] = $match[1] . '/100 ' . trim($match[2]);
+    }
+    
+    // 邮局连通性
+    if (preg_match('/本地25端口出站[：:]*(.+)/u', $content, $match)) {
+        $port25 = trim($match[1]);
+        $metrics['邮局'] = $port25;
+    }
+    
+    // 黑名单状态
+    if (preg_match('/IP地址黑名单数据库[：:]*\s*有效\s*(\d+)\s*正常\s*(\d+)\s*已标记\s*(\d+)\s*黑名单\s*(\d+)/u', $content, $match)) {
+        if (intval($match[4]) > 0) {
+            $metrics['黑名单'] = $match[4] . '/' . $match[1];
+        } else {
+            $metrics['黑名单'] = '正常 ' . $match[2] . '/' . $match[1];
+        }
+    }
+    
     return $metrics;
 }
 
@@ -370,10 +430,10 @@ function drawSection(&$svg, $x, $y, $width, $title, $metrics, $type) {
 }
 
 function drawInfoCards(&$svg, $x, $y, $metrics) {
-    $w = 220;
+    $w = 185;
     $h = 80;
-    $gap = 12;
-    $cols = 5;
+    $gap = 10;
+    $cols = 6;
     $col = 0;
     $cx = $x;
     $cy = $y;
@@ -388,7 +448,7 @@ function drawInfoCards(&$svg, $x, $y, $metrics) {
         // 文本
         $svg[] = '<text x="' . ($cx + 16) . '" y="' . ($cy + 32) . '" class="card-label">' . htmlspecialchars($key) . '</text>';
         
-        $displayValue = mb_strlen($value) > 26 ? mb_substr($value, 0, 23) . '...' : $value;
+        $displayValue = mb_strlen($value) > 22 ? mb_substr($value, 0, 19) . '...' : $value;
         $svg[] = '<text x="' . ($cx + 16) . '" y="' . ($cy + 56) . '" class="card-value">' . htmlspecialchars($displayValue) . '</text>';
         
         $col++;
