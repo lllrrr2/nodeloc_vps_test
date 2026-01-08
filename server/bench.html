@@ -270,7 +270,6 @@
         console.log('URL path:', urlPath);
         
         // Get file parameter from URL (supports both 'file' and 'filename')
-        // Priority: URL parameter > path extraction
         let filePath = urlParams.get('file') || urlParams.get('filename');
         
         console.log('File path from param:', filePath);
@@ -281,25 +280,17 @@
             console.log('Path segments:', segments);
             
             // Handle /result/YYYY/MM/filename.txt format
-            if (segments.length >= 4 && segments[0] === 'result') {
-                const year = segments[1];
-                const month = segments[2];
-                const file = segments[3];
-                filePath = `${year}/${month}/${file}`;
+            // Extract the part after /result/ and use it as file path
+            if (segments[0] === 'result' && segments.length >= 4) {
+                // Remove 'result' from the beginning
+                filePath = segments.slice(1).join('/');
                 console.log('Extracted file path from /result/:', filePath);
             }
-            // Handle /bench.html in path (rewrite already done)
-            else if (segments.includes('bench.html')) {
-                // This means rewrite failed or direct access
-                console.log('Direct bench.html access without file parameter');
-            }
-            // Handle /YYYY/MM/filename.txt format (fallback)
-            else if (segments.length >= 3) {
-                const year = segments[segments.length - 3];
-                const month = segments[segments.length - 2];
-                const file = segments[segments.length - 1];
-                filePath = `${year}/${month}/${file}`;
-                console.log('Extracted file path:', filePath);
+            // Handle direct /YYYY/MM/filename.txt format
+            else if (segments.length >= 3 && !segments.includes('bench.html')) {
+                // Use the full path after domain as file path
+                filePath = segments.join('/');
+                console.log('Extracted file path from direct URL:', filePath);
             }
         }
         

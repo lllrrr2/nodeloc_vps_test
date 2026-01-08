@@ -3,9 +3,12 @@
 # 启用重写引擎
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteBase /
     
-    # 重定向旧的结果页面
-    RewriteRule ^result/(.*)$ bench.html?file=$1 [L,QSA]
+    # 如果访问的是 /result/YYYY/MM/filename.txt，返回 bench.html 但保持 URL 不变
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^result/(.*)$ bench.html [L]
 </IfModule>
 
 # 设置MIME类型
