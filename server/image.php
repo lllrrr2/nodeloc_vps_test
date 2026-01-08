@@ -356,6 +356,12 @@ function drawHeader($image, $draw, $width, $timestamp) {
     $headerDraw->rectangle(0, 0, $width, $headerHeight);
     $image->drawImage($headerDraw);
     
+    // 获取字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
+    
     // 标题
     $draw->setFillColor('#FFFFFF');
     $draw->setFontSize(28);
@@ -376,6 +382,12 @@ function drawHeader($image, $draw, $width, $timestamp) {
 }
 
 function drawSection($image, $draw, $x, $y, $width, $title, $metrics, $type) {
+    // 获取字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
+    
     // 绘制section标题
     $draw->setFillColor('#1A73E8');
     $draw->setFontSize(18);
@@ -402,6 +414,12 @@ function drawSection($image, $draw, $x, $y, $width, $title, $metrics, $type) {
 
 function drawInfoCards($image, $draw, $x, $y, $width, $metrics) {
     $cardWidth = 270;
+    // 获取字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
+    
     $cardHeight = 100;
     $spacing = 20;
     $col = 0;
@@ -453,6 +471,12 @@ function drawInfoCards($image, $draw, $x, $y, $width, $metrics) {
 function drawStreamingGrid($image, $draw, $x, $y, $width, $metrics) {
     $itemWidth = 180;
     $itemHeight = 50;
+    // 获取字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
+    
     $cols = 3;
     $spacing = 15;
     $col = 0;
@@ -494,7 +518,13 @@ function drawStreamingGrid($image, $draw, $x, $y, $width, $metrics) {
         }
     }
     
-    if ($col > 0) {
+    if 获取字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
+    
+    // ($col > 0) {
         $currentY += $itemHeight + $spacing;
     }
     
@@ -544,6 +574,12 @@ function drawBarChart($image, $draw, $x, $y, $width, $metrics) {
         
         // 数值
         $draw->setFillColor('#212121');
+    // 获取字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
+    
         $draw->setFontSize(12);
         $draw->annotation($x + 130 + $barWidth, $currentY + 22, $value);
         
@@ -557,6 +593,12 @@ function drawList($image, $draw, $x, $y, $metrics) {
     $currentY = $y;
     
     foreach ($metrics as $key => $value) {
+    // 获取字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
+    
         $draw->setFillColor('#212121');
         $draw->setFontSize(13);
         $draw->annotation($x + 20, $currentY + 20, "$key: $value");
@@ -623,7 +665,13 @@ function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
         } else {
             $currentX += $itemWidth + $spacing;
         }
+    }获取字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
     }
+    
+    // 
     
     if ($col > 0) {
         $currentY += $itemHeight + $spacing;
