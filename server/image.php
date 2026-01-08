@@ -352,30 +352,38 @@ function generateResultImage($data) {
 function drawHeader($image, $draw, $width, $timestamp) {
     $headerHeight = 90;
     
-    // 渐变背景
+    // 创建一个临时的draw对象用于绘制所有元素
     $headerDraw = new ImagickDraw();
+    
+    // 设置字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $headerDraw->setFont($fontFile);
+    }
+    $headerDraw->setTextAntialias(true);
+    
+    // 1. 先画背景矩形
     $headerDraw->setFillColor('#1A73E8');
     $headerDraw->rectangle(0, 0, $width, $headerHeight);
-    $image->drawImage($headerDraw);
     
-    // 直接使用传入的draw对象（和其他section一样的方式）
-    $draw->setFillColor('#FFFFFF');
-    $draw->setFontSize(28);
-    $draw->setFontWeight(700);
-    $image->annotateImage($draw, 75, 40, 0, "VPS Performance Test Report");
-    error_log("[drawHeader] Title drawn with passed draw object");
-    
-    // 副标题
-    $draw->setFillColor('#FFFFFF');
-    $draw->setFontSize(14);
-    $draw->setFontWeight(400);
-    $image->annotateImage($draw, 75, 65, 0, "Generated: " . $timestamp);
-    error_log("[drawHeader] Subtitle drawn with passed draw object");
-    
-    // 装饰圆圈
+    // 2. 画装饰圆圈
     $headerDraw->setFillColor('#FFA726');
     $headerDraw->circle($width - 60, 40, $width - 40, 40);
+    
+    // 3. 画标题文字
+    $headerDraw->setFillColor('#FFFFFF');
+    $headerDraw->setFontSize(28);
+    $headerDraw->setFontWeight(700);
+    $headerDraw->annotation(75, 40, "VPS Performance Test Report");
+    
+    // 4. 画副标题
+    $headerDraw->setFontSize(14);
+    $headerDraw->setFontWeight(400);
+    $headerDraw->annotation(75, 65, "Generated: " . $timestamp);
+    
+    // 一次性绘制所有元素
     $image->drawImage($headerDraw);
+    error_log("[drawHeader] Header drawn with all elements");
     
     return $headerHeight;
 }
