@@ -201,12 +201,41 @@ function parseResponse($content) {
 
 function parseRouteTrace($content) {
     $metrics = [];
-    preg_match_all('/No:(\d+)\/9 Traceroute to ([^\n]+)/u', $content, $matches, PREG_SET_ORDER);
     
-    foreach ($matches as $match) {
-        $routeNum = $match[1];
-        $destination = $match[2];
-        $metrics["路由 $routeNum"] = $destination;
+    // 查找所有路由追踪块
+    preg_match_all('/No:(\d+)\/9 Traceroute to ([^\n]+)\n([\s\S]*?)(?=No:\d+\/9|$)/u', $content, $blocks, PREG_SET_ORDER);
+    
+    foreach ($blocks as $block) {
+        $routeNum = $block[1];
+        $destination = trim($block[2]);
+        $traceContent = $block[3];
+        
+        // 提取跳点信息
+        $hops = [];
+        preg_match_all('/^\s*(\d+)\s+([^\n]+)/m', $traceContent, $hopMatches, PREG_SET_ORDER);
+        
+        foreach ($hopMatches as $hopMatch) {
+            $hopNum = $hopMatch[1];
+            $hopInfo = trim($hopMatch[2]);
+            
+            // 简化跳点信息：提取IP或主机名
+            if (preg_match('/(\d+\.\d+\.\d+\.\d+)/', $hopInfo, $ipMatch)) {
+                $hops[] = $ipMatch[1];
+            } elseif (preg_match('/([a-zA-Z0-9\-\.]+\.[a-z]{2,})/i', $hopInfo, $hostMatch)) {
+                $hops[] = $hostMatch[1];
+            } elseif (stripos($hopInfo, '*') === false) {
+                // 提取第一个有意义的词
+                $words = preg_split('/\s+/', $hopInfo);
+                if (!empty($words[0]) && strlen($words[0]) > 2) {
+                    $hops[] = $words[0];
+                }
+            }
+        }
+        
+        $metrics["路由 $routeNum"] = [
+            'destination' => $destination,
+            'hops' => $hops
+        ];
     }
     
     return $metrics;
@@ -263,8 +292,8 @@ function generateResultImage($data) {
     // 2. IP质量
     if (!empty($sections['IP质量']['metrics'])) {
         $currentY = drawSection($image, $draw, $padding, $currentY, $width,
-                                "🌐 IP质量", $sections['IP质量']['metrics'], 'info');
-        $currentY += 20;  // 从30减到20
+                                "🌐 IP质量", $sections['IP质量']['metrics'], 'ipquality');
+        $currentY += 20;
     }
     
     // 3. 流媒体
@@ -274,18 +303,12 @@ function generateResultImage($data) {
         $currentY += 20;  // 从30减到20
     }
     
-    // 4. 多线程测速
-    if (!empty($sections['多线程测速']['metrics'])) {
-        $currentY = drawSection($image, $draw, $padding, $currentY, $width,
-                                "🚀 多线程测速", $sections['多线程测速']['metrics'], 'bar');
-        $currentY += 20;  // 从30减到20
-    }
-    
-    // 5. 单线程测速
-    if (!empty($sections['单线程测速']['metrics'])) {
-        $currentY = drawSection($image, $draw, $padding, $currentY, $width,
-                                "📈 单线程测速", $sections['单线程测速']['metrics'], 'bar');
-        $currentY += 20;  // 从30减到20
+    // 4. 测速（多线程和单线程合并）
+    if (!empty($sections['多线程测速']['metrics']) || !empty($sections['单线程测速']['metrics'])) {
+        $currentY = drawDualSpeedTest($image, $draw, $padding, $currentY, $width,
+                                      $sections['多线程测速']['metrics'] ?? [],
+                                      $sections['单线程测速']['metrics'] ?? []);
+        $currentY += 20;
     }
     
     // 6. 响应测试
@@ -392,60 +415,104 @@ function drawSection($image, $draw, $x, $y, $width, $title, $metrics, $type) {
 }
 
 function drawInfoCards($image, $draw, $x, $y, $width, $metrics) {
-    $cardWidth = 270;
-    $cardHeight = 85;  // 从100减到85
-    $spacing = 15;  // 从20减到15
-    $col = 0;
-    $currentX = $x;
-    $currentY = $y;
-    
+    // 单行横向显示所有信息
+    $parts = [];
     foreach ($metrics as $key => $value) {
-        // 绘制卡片背景
-        $cardDraw = new ImagickDraw();
-        $cardDraw->setFillColor('#FFFFFF');
-        $cardDraw->setStrokeColor('#E0E0E0');
-        $cardDraw->setStrokeWidth(1);
-        $cardDraw->roundRectangle($currentX, $currentY, $currentX + $cardWidth, $currentY + $cardHeight, 10, 10);
-        $image->drawImage($cardDraw);
-        
-        // 顶部色条
-        $cardDraw->setFillColor('#42A5F5');
-        $cardDraw->rectangle($currentX + 1, $currentY + 1, $currentX + $cardWidth - 1, $currentY + 5);
-        $image->drawImage($cardDraw);
-        
-        // 标题
-        $draw->setFillColor('#757575');
-        $draw->setFontSize(10);  // 从11减到10
-        $image->annotateImage($draw, $currentX + 15, $currentY + 30, 0, $key);
-        
-        // 数值 - 限制长度
-        $displayValue = mb_strlen($value) > 30 ? mb_substr($value, 0, 27) . '...' : $value;
-        $draw->setFillColor('#212121');
-        $draw->setFontSize(12);  // 从13减到12
-        $image->annotateImage($draw, $currentX + 15, $currentY + 55, 0, $displayValue);
-        
-        $col++;
-        if ($col >= 4) {
-            $col = 0;
-            $currentX = $x;
-            $currentY += $cardHeight + $spacing;
-        } else {
-            $currentX += $cardWidth + $spacing;
-        }
+        $parts[] = "$key: $value";
     }
+    $text = implode(' | ', $parts);
     
-    if ($col > 0) {
-        $currentY += $cardHeight + $spacing;
+    // 绘制背景条
+    $barHeight = 45;
+    $barDraw = new ImagickDraw();
+    $barDraw->setFillColor('#FFFFFF');
+    $barDraw->setStrokeColor('#E0E0E0');
+    $barDraw->setStrokeWidth(1);
+    $barDraw->roundRectangle($x, $y, $x + $width - 50, $y + $barHeight, 8, 8);
+    $image->drawImage($barDraw);
+    
+    // 顶部色条
+    $barDraw->setFillColor('#42A5F5');
+    $barDraw->rectangle($x + 1, $y + 1, $x + $width - 51, $y + 4);
+    $image->drawImage($barDraw);
+    
+    // 文字
+    $draw->setFillColor('#212121');
+    $draw->setFontSize(11);
+    $image->annotateImage($draw, $x + 20, $y + 28, 0, $text);
+    
+    return $y + $barHeight + 15;
+}
+
+function drawIPQualitySingle($image, $draw, $x, $y, $width, $metrics) {
+    // 提取关键信息：地区、组织
+    $region = isset($metrics['地区']) ? $metrics['地区'] : (isset($metrics['位置']) ? $metrics['位置'] : '');
+    $org = isset($metrics['组织']) ? $metrics['组织'] : (isset($metrics['ASN组织']) ? $metrics['ASN组织'] : '');
+    
+    $parts = [];
+    foreach ($metrics as $key => $value) {
+        $parts[] = "$key: $value";
     }
+    $text = implode(' | ', $parts);
     
-    return $currentY;
+    // 绘制背景条
+    $barHeight = 45;
+    $barDraw = new ImagickDraw();
+    $barDraw->setFillColor('#FFFFFF');
+    $barDraw->setStrokeColor('#E0E0E0');
+    $barDraw->setStrokeWidth(1);
+    $barDraw->roundRectangle($x, $y, $x + $width - 50, $y + $barHeight, 8, 8);
+    $image->drawImage($barDraw);
+    
+    // 顶部色条
+    $barDraw->setFillColor('#66BB6A');
+    $barDraw->rectangle($x + 1, $y + 1, $x + $width - 51, $y + 4);
+    $image->drawImage($barDraw);
+    
+    // 文字
+    $draw->setFillColor('#212121');
+    $draw->setFontSize(11);
+    $image->annotateImage($draw, $x + 20, $y + 28, 0, $text);
+    
+    return $y + $barHeight + 15;
 }
 
 function drawStreamingGrid($image, $draw, $x, $y, $width, $metrics) {
+    // 单行显示所有流媒体服务
+    $parts = [];
+    foreach ($metrics as $service => $status) {
+        $icon = ($status === '解锁' || $status === '✓') ? '✓' : '✗';
+        $parts[] = "$service: $icon";
+    }
+    $text = implode(' | ', $parts);
+    
+    // 绘制背景条
+    $barHeight = 45;
+    $barDraw = new ImagickDraw();
+    $barDraw->setFillColor('#FFFFFF');
+    $barDraw->setStrokeColor('#E0E0E0');
+    $barDraw->setStrokeWidth(1);
+    $barDraw->roundRectangle($x, $y, $x + $width - 50, $y + $barHeight, 8, 8);
+    $image->drawImage($barDraw);
+    
+    // 顶部色条
+    $barDraw->setFillColor('#AB47BC');
+    $barDraw->rectangle($x + 1, $y + 1, $x + $width - 51, $y + 4);
+    $image->drawImage($barDraw);
+    
+    // 文字
+    $draw->setFillColor('#212121');
+    $draw->setFontSize(11);
+    $image->annotateImage($draw, $x + 20, $y + 28, 0, $text);
+    
+    return $y + $barHeight + 15;
+}
+
+function drawStreamingGridOld($image, $draw, $x, $y, $width, $metrics) {
     $itemWidth = 180;
-    $itemHeight = 42;  // 从50减到42
+    $itemHeight = 42;
     $cols = 3;
-    $spacing = 12;  // 从15减到12
+    $spacing = 12;
     $col = 0;
     $currentX = $x;
     $currentY = $y;
@@ -557,18 +624,116 @@ function drawList($image, $draw, $x, $y, $metrics) {
     return $currentY;
 }
 
+// 新增：左右布局显示双测速
+function drawDualSpeedTest($image, $draw, $x, $y, $width, $multiMetrics, $singleMetrics) {
+    // 设置字体
+    $fontFile = findChineseFont();
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
+    
+    // 绘制标题
+    $draw->setFillColor('#1A73E8');
+    $draw->setFontSize(16);
+    $draw->setFontWeight(700);
+    $image->annotateImage($draw, $x, $y + 18, 0, "🚀 测速结果");
+    
+    $y += 35;
+    $halfWidth = floor(($width - 50 - 30) / 2);  // 减去padding，分成两半，中间留30px间距
+    
+    $leftY = $y;
+    $rightY = $y;
+    
+    // 左侧：多线程
+    if (!empty($multiMetrics)) {
+        $draw->setFillColor('#757575');
+        $draw->setFontSize(13);
+        $draw->setFontWeight(600);
+        $image->annotateImage($draw, $x, $y + 15, 0, "多线程");
+        $leftY = drawBarChartCompact($image, $draw, $x, $y + 30, $halfWidth, $multiMetrics);
+    }
+    
+    // 右侧：单线程
+    if (!empty($singleMetrics)) {
+        $draw->setFillColor('#757575');
+        $draw->setFontSize(13);
+        $draw->setFontWeight(600);
+        $image->annotateImage($draw, $x + $halfWidth + 30, $y + 15, 0, "单线程");
+        $rightY = drawBarChartCompact($image, $draw, $x + $halfWidth + 30, $y + 30, $halfWidth, $singleMetrics);
+    }
+    
+    // 返回最大高度
+    $maxY = max($leftY, $rightY);
+    return $maxY + 10;
+}
+
+// 紧凑版条形图
+function drawBarChartCompact($image, $draw, $x, $y, $width, $metrics) {
+    $barHeight = 25;
+    $spacing = 8;
+    $currentY = $y;
+    
+    foreach ($metrics as $key => $value) {
+        if ($key !== '平均下载' && $key !== '平均上传') continue;
+        
+        // 解析数值
+        preg_match('/(\d+\.?\d*)\s*([MGT]?)(b|B)?/i', $value, $matches);
+        $numValue = isset($matches[1]) ? floatval($matches[1]) : 0;
+        $unit = isset($matches[2]) ? $matches[2] : '';
+        
+        // 归一化到Mbps
+        if ($unit === 'G' || $unit === 'g') $numValue *= 1000;
+        if ($unit === 'K' || $unit === 'k') $numValue /= 1000;
+        
+        $barWidth = min(($numValue / 1000) * ($width - 200), $width - 200);
+        if ($barWidth < 10) $barWidth = 10;
+        
+        // 绘制条形背景
+        $barDraw = new ImagickDraw();
+        $barDraw->setFillColor('#E3F2FD');
+        $barDraw->roundRectangle($x + 80, $currentY, $x + 80 + $barWidth, $currentY + $barHeight, 4, 4);
+        $image->drawImage($barDraw);
+        
+        // 标签
+        $draw->setFillColor('#212121');
+        $draw->setFontSize(10);
+        $draw->setFontWeight(400);
+        $labelText = str_replace('平均', '', $key);
+        $image->annotateImage($draw, $x + 5, $currentY + 17, 0, $labelText);
+        
+        // 数值
+        $draw->setFillColor('#1976D2');
+        $draw->setFontSize(10);
+        $draw->setFontWeight(700);
+        $image->annotateImage($draw, $x + 85, $currentY + 17, 0, $value);
+        
+        $currentY += $barHeight + $spacing;
+    }
+    
+    return $currentY;
+}
+
 function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
     $itemWidth = 370;
-    $itemHeight = 60;  // 从70减到60
+    $itemHeight = 90;  // 增加高度显示跳点
     $cols = 3;
-    $spacing = 12;  // 从15减到12
+    $spacing = 12;
     $col = 0;
     $currentX = $x;
     $currentY = $y;
     
-    foreach ($metrics as $label => $destination) {
+    foreach ($metrics as $label => $routeData) {
+        // 解析路由数据
+        if (is_array($routeData)) {
+            $destination = $routeData['destination'] ?? '';
+            $hops = $routeData['hops'] ?? [];
+        } else {
+            $destination = $routeData;
+            $hops = [];
+        }
+        
         // 确定颜色
-        $color = '#42A5F5'; // 默认蓝色
+        $color = '#42A5F5';
         if (stripos($destination, '电信') !== false) $color = '#42A5F5';
         elseif (stripos($destination, '联通') !== false) $color = '#66BB6A';
         elseif (stripos($destination, '移动') !== false) $color = '#FFA726';
@@ -588,22 +753,36 @@ function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
         
         // 路由编号
         $draw->setFillColor($color);
-        $draw->setFontSize(11);  // 从12减到11
+        $draw->setFontSize(11);
         $draw->setFontWeight(700);
-        $image->annotateImage($draw, $currentX + 15, $currentY + 25, 0, $label);
+        $image->annotateImage($draw, $currentX + 15, $currentY + 22, 0, $label);
         
-        // 目的地 - 自动换行
+        // 目的地
         $draw->setFillColor('#212121');
-        $draw->setFontSize(9);  // 从10减到9
+        $draw->setFontSize(10);
         $draw->setFontWeight(400);
-        $maxLen = 48;
+        $maxLen = 42;
         if (mb_strlen($destination) > $maxLen) {
-            $line1 = mb_substr($destination, 0, $maxLen);
-            $line2 = mb_substr($destination, $maxLen);
-            $image->annotateImage($draw, $currentX + 15, $currentY + 42, 0, $line1);
-            $image->annotateImage($draw, $currentX + 15, $currentY + 54, 0, $line2);
+            $dest = mb_substr($destination, 0, $maxLen - 3) . '...';
         } else {
-            $image->annotateImage($draw, $currentX + 15, $currentY + 42, 0, $destination);
+            $dest = $destination;
+        }
+        $image->annotateImage($draw, $currentX + 15, $currentY + 38, 0, $dest);
+        
+        // 显示跳点信息
+        if (!empty($hops)) {
+            $draw->setFontSize(8);
+            $draw->setFillColor('#757575');
+            $hopText = '跳点: ' . implode(' → ', array_slice($hops, 0, 3));  // 显示前3跳
+            if (count($hops) > 3) $hopText .= ' ...';
+            $image->annotateImage($draw, $currentX + 15, $currentY + 55, 0, $hopText);
+            
+            // 显示后续跳点
+            if (count($hops) > 3) {
+                $hopText2 = implode(' → ', array_slice($hops, 3, 3));
+                if (count($hops) > 6) $hopText2 .= ' ...';
+                $image->annotateImage($draw, $currentX + 15, $currentY + 68, 0, $hopText2);
+            }
         }
         
         $col++;
