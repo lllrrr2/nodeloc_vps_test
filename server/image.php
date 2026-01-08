@@ -370,42 +370,38 @@ function parseRouteTrace($content) {
  * 生成结果图片
  */
 function generateResultImage($data) {
-    // 图片尺寸
-    $width = 850;
-    $headerHeight = 100;
-    $sectionHeight = 45;
-    $metricsLineHeight = 32;
-    $padding = 20;
+    // 图片尺寸 - 加宽以容纳图表
+    $width = 1200;
+    $headerHeight = 120;
+    $padding = 25;
     
-    // 计算总高度
-    $totalMetrics = 0;
-    foreach ($data['sections'] as $section) {
-        if (!empty($section['metrics'])) {
-            $totalMetrics += count($section['metrics']);
-        }
-    }
-    
-    $sectionsCount = count($data['sections']);
-    $height = $headerHeight + ($sectionsCount * ($sectionHeight + 10)) + ($totalMetrics * $metricsLineHeight) + 80;
+    // 预估高度
+    $estimatedHeight = 2000; // 先用一个较大的值
     
     // 创建图片
-    $image = imagecreatetruecolor($width, $height);
+    $image = imagecreatetruecolor($width, $estimatedHeight);
     
     // 定义现代化配色方案
-    $bgColor = imagecolorallocate($image, 248, 249, 250);           // 浅灰背景
-    $headerBg = imagecolorallocate($image, 26, 115, 232);           // 现代蓝色
-    $headerBgDark = imagecolorallocate($image, 13, 71, 161);        // 深蓝
-    $sectionBg = imagecolorallocate($image, 227, 242, 253);         // 浅蓝色
-    $sectionBorder = imagecolorallocate($image, 144, 202, 249);     // 蓝色边框
-    $textColor = imagecolorallocate($image, 33, 33, 33);            // 深灰文字
-    $textLight = imagecolorallocate($image, 97, 97, 97);            // 浅灰文字
+    $bgColor = imagecolorallocate($image, 248, 249, 250);
+    $headerBg = imagecolorallocate($image, 26, 115, 232);
+    $headerBgDark = imagecolorallocate($image, 13, 71, 161);
+    $sectionBg = imagecolorallocate($image, 227, 242, 253);
+    $sectionBorder = imagecolorallocate($image, 144, 202, 249);
+    $textColor = imagecolorallocate($image, 33, 33, 33);
+    $textLight = imagecolorallocate($image, 97, 97, 97);
     $whiteColor = imagecolorallocate($image, 255, 255, 255);
-    $successColor = imagecolorallocate($image, 56, 142, 60);        // 成功绿
-    $failColor = imagecolorallocate($image, 211, 47, 47);           // 失败红
-    $accentColor = imagecolorallocate($image, 255, 167, 38);        // 强调橙
+    $successColor = imagecolorallocate($image, 56, 142, 60);
+    $failColor = imagecolorallocate($image, 211, 47, 47);
+    $accentColor = imagecolorallocate($image, 255, 167, 38);
+    $chartBlue = imagecolorallocate($image, 66, 165, 245);
+    $chartGreen = imagecolorallocate($image, 102, 187, 106);
+    $chartOrange = imagecolorallocate($image, 255, 167, 38);
+    $chartPurple = imagecolorallocate($image, 171, 71, 188);
+    $chartCyan = imagecolorallocate($image, 38, 198, 218);
+    $gridColor = imagecolorallocate($image, 224, 224, 224);
     
     // 填充背景
-    imagefilledrectangle($image, 0, 0, $width, $height, $bgColor);
+    imagefilledrectangle($image, 0, 0, $width, $estimatedHeight, $bgColor);
     
     // 查找字体 - 优先使用支持中文的字体
     $fontPaths = [
@@ -471,124 +467,355 @@ function generateResultImage($data) {
         imagettftext($image, 12, 0, $padding + 50, 65, $whiteColor, $fontFile, $subtitle);
         // 装饰线
         imagefilledrectangle($image, $padding + 50, 75, $padding + 200, 78, $accentColor);
-    } else {
-        imagestring($image, 5, $padding, 25, $title, $whiteColor);
-        imagestring($image, 3, $padding, 55, $subtitle, $whiteColor);
     }
     
-    // 绘制测试结果
-    $currentY = $headerHeight + 25;
+    // 开始绘制内容
+    $currentY = $headerHeight + 30;
     
-    foreach ($data['sections'] as $sectionName => $section) {
-        if (empty($section['metrics'])) {
-            continue;
+    // 准备颜色数组
+    $colors = [$chartBlue, $chartGreen, $chartOrange, $chartPurple, $chartCyan];
+    
+    // 1. 绘制YABS信息卡片
+    if (isset($data['sections']['YABS']) && !empty($data['sections']['YABS']['metrics'])) {
+        $yabsMetrics = $data['sections']['YABS']['metrics'];
+        
+        // 绘制section标题
+        if ($fontFile) {
+            imagettftext($image, 16, 0, $padding, $currentY, $headerBg, $fontFile, "📊 System Information");
         }
+        $currentY += 35;
         
-        // 翻译section名称为英文
-        $sectionNameEn = translateSectionName($sectionName);
+        // 绘制信息卡片 - 4列布局
+        $cardWidth = 270;
+        $cardHeight = 100;
+        $cardSpacing = 20;
+        $cardsPerRow = 4;
         
-        // 为每个section选择图标
-        $sectionIcon = getSectionIcon($sectionName);
+        $cardData = [
+            ['icon' => '💻', 'title' => 'CPU', 'value' => $yabsMetrics['CPU'] ?? 'N/A', 'color' => $chartBlue],
+            ['icon' => '🧠', 'title' => 'Memory', 'value' => $yabsMetrics['Memory'] ?? 'N/A', 'color' => $chartGreen],
+            ['icon' => '💾', 'title' => 'Disk', 'value' => $yabsMetrics['Disk'] ?? 'N/A', 'color' => $chartOrange],
+            ['icon' => '⚡', 'title' => 'Disk I/O', 'value' => $yabsMetrics['Disk I/O'] ?? 'N/A', 'color' => $chartPurple],
+        ];
         
-        // 绘制section标题（圆角效果）
-        drawRoundedRect($image, $padding, $currentY, $width - $padding, $currentY + $sectionHeight, 8, $sectionBg, $sectionBorder);
-        
-        // 绘制左侧彩色标记条
-        $markerColor = getSectionColor($image, $sectionName);
-        imagefilledrectangle($image, $padding + 5, $currentY + 10, $padding + 10, $currentY + $sectionHeight - 10, $markerColor);
-        
-        if ($fontExists) {
-            // 绘制图标
-            imagettftext($image, 18, 0, $padding + 20, $currentY + 32, $headerBg, $fontFile, $sectionIcon);
-            // 绘制标题
-            imagettftext($image, 15, 0, $padding + 50, $currentY + 30, $headerBg, $fontFile, $sectionNameEn);
-        } else {
-            imagestring($image, 4, $padding + 15, $currentY + 15, $sectionIcon . " " . $sectionNameEn, $headerBg);
+        $cardX = $padding;
+        foreach ($cardData as $index => $card) {
+            drawInfoCard($image, $cardX, $currentY, $cardWidth, $cardHeight, 
+                        $card['icon'], $card['title'], $card['value'], $card['color'], $fontFile);
+            $cardX += $cardWidth + $cardSpacing;
         }
-        
-        $currentY += $sectionHeight + 10;
-        
-        // 绘制metrics
-        $metricIndex = 0;
-        foreach ($section['metrics'] as $key => $value) {
-            $keyEn = translateMetricKey($key);
-            $text = "{$keyEn}: {$value}";
-            
-            // 根据内容选择颜色和图标
-            $color = $textColor;
-            $icon = "•";
-            $bgRect = false;
-            
-            if ($value === '✓') {
-                $color = $successColor;
-                $icon = "✓";
-                $text = "{$icon} {$keyEn}";
-                $bgRect = true;
-            } elseif ($value === '✗') {
-                $color = $failColor;
-                $icon = "✗";
-                $text = "{$icon} {$keyEn}";
-                $bgRect = true;
-            }
-            
-            // 为带背景的项目绘制浅色背景
-            if ($bgRect && $fontExists) {
-                $bgAlpha = imagecolorallocatealpha($image, 
-                    $value === '✓' ? 200 : 255, 
-                    $value === '✓' ? 230 : 220, 
-                    $value === '✓' ? 201 : 220, 
-                    100
-                );
-                drawRoundedRect($image, $padding + 20, $currentY + 2, $padding + 300, $currentY + 28, 4, $bgAlpha, $bgAlpha);
-            }
-            
-            // 绘制项目符号和文本
-            if ($fontExists) {
-                // 绘制渐变效果的圆点
-                if (!$bgRect) {
-                    imagefilledellipse($image, $padding + 30, $currentY + 14, 8, 8, $markerColor);
-                    imagefilledellipse($image, $padding + 30, $currentY + 14, 6, 6, $color);
-                }
-                
-                // 绘制文本
-                imagettftext($image, 11, 0, $padding + ($bgRect ? 35 : 42), $currentY + 19, $bgRect ? $color : $textColor, $fontFile, $text);
-            } else {
-                imagestring($image, 3, $padding + 20, $currentY + 5, $icon . " " . $text, $color);
-            }
-            
-            $currentY += $metricsLineHeight;
-            $metricIndex++;
-        }
-        
-        $currentY += 15;
+        $currentY += $cardHeight + 40;
     }
+    
+    // 2. 绘制IP质量信息
+    if (isset($data['sections']['IP质量']) && !empty($data['sections']['IP质量']['metrics'])) {
+        if ($fontFile) {
+            imagettftext($image, 16, 0, $padding, $currentY, $headerBg, $fontFile, "🌐 IP Quality");
+        }
+        $currentY += 35;
+        
+        $ipMetrics = $data['sections']['IP质量']['metrics'];
+        $cardX = $padding;
+        
+        $ipCards = [
+            ['icon' => '🔖', 'title' => 'IP Type', 'value' => $ipMetrics['IP Type'] ?? 'N/A', 'color' => $chartBlue],
+            ['icon' => '🏢', 'title' => 'ASN', 'value' => $ipMetrics['ASN'] ?? 'N/A', 'color' => $chartGreen],
+            ['icon' => '⚠️', 'title' => 'Risk Score', 'value' => $ipMetrics['Risk Score'] ?? 'N/A', 'color' => $chartOrange],
+        ];
+        
+        foreach ($ipCards as $card) {
+            drawInfoCard($image, $cardX, $currentY, $cardWidth, $cardHeight,
+                        $card['icon'], $card['title'], $card['value'], $card['color'], $fontFile);
+            $cardX += $cardWidth + $cardSpacing;
+        }
+        $currentY += $cardHeight + 40;
+    }
+    
+    // 3. 绘制流媒体解锁网格
+    if (isset($data['sections']['流媒体']) && !empty($data['sections']['流媒体']['metrics'])) {
+        if ($fontFile) {
+            imagettftext($image, 16, 0, $padding, $currentY, $headerBg, $fontFile, "🎬 Streaming Services Unlock Status");
+        }
+        $currentY += 35;
+        
+        $currentY = drawStreamingGrid($image, $padding, $currentY, $width - $padding * 2, 
+                                     $data['sections']['流媒体']['metrics'], $fontFile);
+        $currentY += 30;
+    }
+    
+    // 4. 绘制多线程测速条形图
+    if (isset($data['sections']['多线程测速']) && !empty($data['sections']['多线程测速']['metrics'])) {
+        $speedMetrics = $data['sections']['多线程测速']['metrics'];
+        
+        if ($fontFile) {
+            imagettftext($image, 16, 0, $padding, $currentY, $headerBg, $fontFile, "🚀 Multi-thread Speed Test");
+        }
+        $currentY += 35;
+        
+        // 准备条形图数据
+        $chartData = [];
+        if (isset($speedMetrics['Avg Download'])) {
+            $value = floatval(preg_replace('/[^0-9.]/', '', $speedMetrics['Avg Download']));
+            $chartData[] = ['label' => 'Download Speed', 'value' => $value, 'valueText' => $speedMetrics['Avg Download']];
+        }
+        if (isset($speedMetrics['Avg Upload'])) {
+            $value = floatval(preg_replace('/[^0-9.]/', '', $speedMetrics['Avg Upload']));
+            $chartData[] = ['label' => 'Upload Speed', 'value' => $value, 'valueText' => $speedMetrics['Avg Upload']];
+        }
+        
+        if (!empty($chartData)) {
+            $chartHeight = count($chartData) * 40 + 80;
+            drawBarChart($image, $padding, $currentY, $width - $padding * 2, $chartHeight, 
+                        $chartData, [$chartBlue, $chartGreen], $fontFile, '');
+            $currentY += $chartHeight + 30;
+        }
+    }
+    
+    // 5. 绘制单线程测速条形图
+    if (isset($data['sections']['单线程测速']) && !empty($data['sections']['单线程测速']['metrics'])) {
+        $speedMetrics = $data['sections']['单线程测速']['metrics'];
+        
+        if ($fontFile) {
+            imagettftext($image, 16, 0, $padding, $currentY, $headerBg, $fontFile, "📈 Single-thread Speed Test");
+        }
+        $currentY += 35;
+        
+        // 准备条形图数据
+        $chartData = [];
+        if (isset($speedMetrics['Avg Download'])) {
+            $value = floatval(preg_replace('/[^0-9.]/', '', $speedMetrics['Avg Download']));
+            $chartData[] = ['label' => 'Download Speed', 'value' => $value, 'valueText' => $speedMetrics['Avg Download']];
+        }
+        if (isset($speedMetrics['Avg Upload'])) {
+            $value = floatval(preg_replace('/[^0-9.]/', '', $speedMetrics['Avg Upload']));
+            $chartData[] = ['label' => 'Upload Speed', 'value' => $value, 'valueText' => $speedMetrics['Avg Upload']];
+        }
+        
+        if (!empty($chartData)) {
+            $chartHeight = count($chartData) * 40 + 80;
+            drawBarChart($image, $padding, $currentY, $width - $padding * 2, $chartHeight,
+                        $chartData, [$chartPurple, $chartCyan], $fontFile, '');
+            $currentY += $chartHeight + 30;
+        }
+    }
+    
+    // 6. 绘制响应测试
+    if (isset($data['sections']['响应']) && !empty($data['sections']['响应']['metrics'])) {
+        if ($fontFile) {
+            imagettftext($image, 16, 0, $padding, $currentY, $headerBg, $fontFile, "⚡ Response Test");
+        }
+        $currentY += 35;
+        
+        $responseMetrics = $data['sections']['响应']['metrics'];
+        foreach ($responseMetrics as $key => $value) {
+            if ($fontFile) {
+                imagettftext($image, 12, 0, $padding + 20, $currentY, $textColor, $fontFile, "$key: $value");
+            }
+            $currentY += 30;
+        }
+        $currentY += 20;
+    }
+    
+    // 裁剪到实际使用的高度
+    $finalHeight = $currentY + 60;
+    $finalImage = imagecreatetruecolor($width, $finalHeight);
+    imagecopy($finalImage, $image, 0, 0, 0, 0, $width, $finalHeight);
+    imagedestroy($image);
+    $image = $finalImage;
     
     // 添加现代化底部区域
-    $footerY = $height - 40;
-    imagefilledrectangle($image, 0, $footerY, $width, $height, $headerBgDark);
+    $footerY = $finalHeight - 45;
+    imagefilledrectangle($image, 0, $footerY, $width, $finalHeight, $headerBgDark);
     
     // 底部装饰元素
     for ($i = 0; $i < 5; $i++) {
         $x = $width - 100 + ($i * 15);
         $size = 6 - $i;
-        imagefilledellipse($image, $x, $footerY + 20, $size, $size, $accentColor);
+        imagefilledellipse($image, $x, $footerY + 22, $size, $size, $accentColor);
     }
     
     // 水印和版权信息
     $watermark = "⚡ Powered by bench.nodeloc.cc";
-    if ($fontExists) {
-        imagettftext($image, 10, 0, $padding, $footerY + 25, $whiteColor, $fontFile, $watermark);
+    if ($fontFile) {
+        imagettftext($image, 10, 0, $padding, $footerY + 28, $whiteColor, $fontFile, $watermark);
         // 右侧添加小图标
         $rightText = "📊 NodeLoc.com";
-        imagettftext($image, 9, 0, $width - 150, $footerY + 25, $whiteColor, $fontFile, $rightText);
+        imagettftext($image, 9, 0, $width - 150, $footerY + 28, $whiteColor, $fontFile, $rightText);
     } else {
-        imagestring($image, 2, $padding, $footerY + 15, $watermark, $whiteColor);
-        imagestring($image, 2, $width - 120, $footerY + 15, "NodeLoc.com", $whiteColor);
+        imagestring($image, 2, $padding, $footerY + 18, $watermark, $whiteColor);
+        imagestring($image, 2, $width - 120, $footerY + 18, "NodeLoc.com", $whiteColor);
     }
     
     // 输出图片
     imagepng($image);
     imagedestroy($image);
+}
+
+/**
+ * 绘制条形图
+ */
+function drawBarChart($image, $x, $y, $width, $height, $data, $colors, $fontFile, $title = '') {
+    $whiteColor = imagecolorallocate($image, 255, 255, 255);
+    $textColor = imagecolorallocate($image, 33, 33, 33);
+    $gridColor = imagecolorallocate($image, 224, 224, 224);
+    $bgColor = imagecolorallocate($image, 255, 255, 255);
+    
+    // 绘制背景
+    drawRoundedRect($image, $x, $y, $x + $width, $y + $height, 8, $bgColor, $gridColor);
+    
+    // 绘制标题
+    if ($title && $fontFile) {
+        imagettftext($image, 12, 0, $x + 15, $y + 25, $textColor, $fontFile, $title);
+    }
+    
+    $chartY = $y + ($title ? 40 : 15);
+    $chartHeight = $height - ($title ? 55 : 30);
+    $barHeight = 25;
+    $barSpacing = 10;
+    
+    // 找出最大值
+    $maxValue = 0;
+    foreach ($data as $item) {
+        if ($item['value'] > $maxValue) {
+            $maxValue = $item['value'];
+        }
+    }
+    
+    if ($maxValue == 0) $maxValue = 100;
+    
+    // 绘制每个条形
+    $currentY = $chartY;
+    foreach ($data as $index => $item) {
+        $barWidth = ($item['value'] / $maxValue) * ($width - 250);
+        $color = $colors[$index % count($colors)];
+        
+        // 绘制标签
+        if ($fontFile) {
+            imagettftext($image, 10, 0, $x + 15, $currentY + 18, $textColor, $fontFile, $item['label']);
+        }
+        
+        // 绘制条形（带圆角）
+        $barX = $x + 150;
+        drawRoundedRect($image, $barX, $currentY + 2, $barX + $barWidth, $currentY + $barHeight, 4, $color, $color);
+        
+        // 绘制数值
+        if ($fontFile) {
+            imagettftext($image, 10, 0, $barX + $barWidth + 10, $currentY + 18, $textColor, $fontFile, $item['valueText']);
+        }
+        
+        $currentY += $barHeight + $barSpacing;
+    }
+    
+    return $currentY - $chartY + 15;
+}
+
+/**
+ * 绘制进度条
+ */
+function drawProgressBar($image, $x, $y, $width, $percentage, $color, $fontFile, $label = '') {
+    $bgColor = imagecolorallocate($image, 230, 230, 230);
+    $textColor = imagecolorallocate($image, 33, 33, 33);
+    $whiteColor = imagecolorallocate($image, 255, 255, 255);
+    
+    $barHeight = 24;
+    
+    // 绘制标签
+    if ($label && $fontFile) {
+        imagettftext($image, 10, 0, $x, $y - 5, $textColor, $fontFile, $label);
+        $y += 20;
+    }
+    
+    // 绘制背景条
+    drawRoundedRect($image, $x, $y, $x + $width, $y + $barHeight, 12, $bgColor, $bgColor);
+    
+    // 绘制进度条
+    $progressWidth = ($width * $percentage) / 100;
+    if ($progressWidth > 0) {
+        drawRoundedRect($image, $x, $y, $x + $progressWidth, $y + $barHeight, 12, $color, $color);
+    }
+    
+    // 绘制百分比文字
+    if ($fontFile) {
+        $text = round($percentage, 1) . '%';
+        imagettftext($image, 10, 0, $x + $width/2 - 20, $y + 17, $textColor, $fontFile, $text);
+    }
+    
+    return $y + $barHeight + 5;
+}
+
+/**
+ * 绘制流媒体解锁网格
+ */
+function drawStreamingGrid($image, $x, $y, $width, $data, $fontFile) {
+    $successColor = imagecolorallocate($image, 76, 175, 80);
+    $failColor = imagecolorallocate($image, 244, 67, 54);
+    $textColor = imagecolorallocate($image, 33, 33, 33);
+    $whiteColor = imagecolorallocate($image, 255, 255, 255);
+    $borderColor = imagecolorallocate($image, 224, 224, 224);
+    
+    $itemWidth = 180;
+    $itemHeight = 50;
+    $cols = 3;
+    $spacing = 15;
+    
+    $currentX = $x;
+    $currentY = $y;
+    $col = 0;
+    
+    foreach ($data as $service => $status) {
+        if ($service === 'Summary') continue;
+        
+        $color = ($status === '✓') ? $successColor : $failColor;
+        $bgColor = ($status === '✓') ? 
+            imagecolorallocate($image, 232, 245, 233) : 
+            imagecolorallocate($image, 255, 235, 238);
+        
+        // 绘制卡片
+        drawRoundedRect($image, $currentX, $currentY, $currentX + $itemWidth, $currentY + $itemHeight, 8, $bgColor, $borderColor);
+        
+        // 绘制图标
+        $icon = ($status === '✓') ? '✓' : '✗';
+        if ($fontFile) {
+            imagettftext($image, 18, 0, $currentX + 15, $currentY + 32, $color, $fontFile, $icon);
+            imagettftext($image, 11, 0, $currentX + 45, $currentY + 32, $textColor, $fontFile, $service);
+        }
+        
+        $col++;
+        if ($col >= $cols) {
+            $col = 0;
+            $currentX = $x;
+            $currentY += $itemHeight + $spacing;
+        } else {
+            $currentX += $itemWidth + $spacing;
+        }
+    }
+    
+    return $currentY + ($col > 0 ? $itemHeight + $spacing : 0);
+}
+
+/**
+ * 绘制信息卡片
+ */
+function drawInfoCard($image, $x, $y, $width, $height, $icon, $title, $value, $color, $fontFile) {
+    $bgColor = imagecolorallocate($image, 255, 255, 255);
+    $textColor = imagecolorallocate($image, 33, 33, 33);
+    $textLight = imagecolorallocate($image, 117, 117, 117);
+    $borderColor = imagecolorallocate($image, 224, 224, 224);
+    
+    // 绘制卡片背景
+    drawRoundedRect($image, $x, $y, $x + $width, $y + $height, 10, $bgColor, $borderColor);
+    
+    // 绘制彩色顶部条
+    imagefilledrectangle($image, $x + 1, $y + 1, $x + $width - 1, $y + 5, $color);
+    
+    if ($fontFile) {
+        // 图标
+        imagettftext($image, 24, 0, $x + 15, $y + 45, $color, $fontFile, $icon);
+        // 标题
+        imagettftext($image, 10, 0, $x + 15, $y + 65, $textLight, $fontFile, $title);
+        // 数值
+        imagettftext($image, 14, 0, $x + 15, $y + 90, $textColor, $fontFile, $value);
+    }
 }
 
 /**
