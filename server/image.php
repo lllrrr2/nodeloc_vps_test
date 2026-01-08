@@ -139,6 +139,9 @@ function parseSectionContent($tabName, $content) {
         case '响应':
             $result['metrics'] = parseResponse($content);
             break;
+        case '回程路由':
+            $result['metrics'] = parseRouteTrace($content);
+            break;
     }
     
     return $result;
@@ -151,23 +154,41 @@ function parseYABS($content) {
     $metrics = [];
     
     // CPU信息
-    if (preg_match('/CPU Model\s*:\s*(.+)/', $content, $match)) {
+    if (preg_match('/Processor\s*:\s*(.+)/i', $content, $match)) {
+        $metrics['CPU'] = trim($match[1]);
+    } elseif (preg_match('/CPU.*?:\s*(.+)/i', $content, $match)) {
         $metrics['CPU'] = trim($match[1]);
     }
     
+    // CPU核心数
+    if (preg_match('/CPU cores\s*:\s*(\d+)/i', $content, $match)) {
+        $metrics['CPU Cores'] = $match[1];
+    }
+    
     // 内存
-    if (preg_match('/Total RAM\s*:\s*(.+)/', $content, $match)) {
-        $metrics['内存'] = trim($match[1]);
+    if (preg_match('/RAM\s*:\s*(.+)/i', $content, $match)) {
+        $metrics['Memory'] = trim($match[1]);
     }
     
     // 磁盘
-    if (preg_match('/Total Disk\s*:\s*(.+)/', $content, $match)) {
-        $metrics['磁盘'] = trim($match[1]);
+    if (preg_match('/Disk\s*:\s*(.+)/i', $content, $match)) {
+        $metrics['Disk'] = trim($match[1]);
     }
     
-    // 下载速度
-    if (preg_match('/fio Disk Speed.*?(\d+\.?\d*)\s*(MB\/s|GB\/s)/s', $content, $match)) {
-        $metrics['磁盘速度'] = $match[1] . ' ' . $match[2];
+    // 虚拟化类型
+    if (preg_match('/VM Type\s*:\s*(.+)/i', $content, $match)) {
+        $metrics['Virtualization'] = trim($match[1]);
+    }
+    
+    // 磁盘读写速度 - 提取混合读写的总速度
+    if (preg_match('/Total\s*\|\s*(\d+\.?\d*)\s*(MB\/s|GB\/s)/i', $content, $match)) {
+        $speed = $match[1];
+        $unit = $match[2];
+        if ($unit === 'MB/s' && floatval($speed) < 1000) {
+            $metrics['Disk I/O'] = $speed . ' ' . $unit;
+        } elseif ($unit === 'GB/s') {
+            $metrics['Disk I/O'] = $speed . ' ' . $unit;
+        }
     }
     
     return $metrics;
@@ -195,17 +216,27 @@ function parseIPQuality($content) {
  */
 function parseStreaming($content) {
     $metrics = [];
-    $services = ['Netflix', 'YouTube', 'Disney+', 'HBO', 'TikTok'];
+    $services = ['Netflix', 'YouTube', 'Disney\+', 'TikTok', 'Amazon Prime', 'ChatGPT', 'Spotify'];
     
     foreach ($services as $service) {
-        if (preg_match("/{$service}[:\s]+(.+)/i", $content, $match)) {
+        $pattern = "/" . str_replace('+', '\+', $service) . "[：:]*\s*(.+)/ui";
+        if (preg_match($pattern, $content, $match)) {
             $status = trim($match[1]);
-            if (stripos($status, '解锁') !== false || stripos($status, 'Yes') !== false) {
-                $metrics[$service] = '✓';
-            } elseif (stripos($status, '失败') !== false || stripos($status, 'No') !== false) {
-                $metrics[$service] = '✗';
+            $serviceName = str_replace('\\', '', $service);
+            
+            if (stripos($status, '解锁') !== false || stripos($status, 'Yes') !== false || stripos($status, '原生') !== false) {
+                $metrics[$serviceName] = '✓';
+            } elseif (stripos($status, '失败') !== false || stripos($status, 'No') !== false || stripos($status, '屏蔽') !== false) {
+                $metrics[$serviceName] = '✗';
             }
         }
+    }
+    
+    // 统计解锁数量
+    $unlocked = count(array_filter($metrics, function($v) { return $v === '✓'; }));
+    $total = count($metrics);
+    if ($total > 0) {
+        $metrics['Summary'] = "$unlocked/$total unlocked";
     }
     
     return $metrics;
@@ -217,8 +248,8 @@ function parseStreaming($content) {
 function parseSpeedTest($content) {
     $metrics = [];
     
-    // 提取上传下载速度
-    preg_match_all('/(\d+\.?\d*)\s*Mbps.*?(\d+\.?\d*)\s*Mbps/i', $content, $matches, PREG_SET_ORDER);
+    // 提取上传下载速度（支持多种单位）
+    preg_match_all('/(\d+\.?\d*)\s*(Mbps|MB\/s).*?(\d+\.?\d*)\s*(Mbps|MB\/s)/i', $content, $matches, PREG_SET_ORDER);
     
     if (!empty($matches)) {
         $avgDown = 0;
@@ -226,13 +257,25 @@ function parseSpeedTest($content) {
         $count = count($matches);
         
         foreach ($matches as $match) {
-            $avgDown += floatval($match[1]);
-            $avgUp += floatval($match[2]);
+            $down = floatval($match[1]);
+            $up = floatval($match[3]);
+            
+            // 转换 MB/s 到 Mbps
+            if (stripos($match[2], 'MB/s') !== false) {
+                $down = $down * 8;
+            }
+            if (stripos($match[4], 'MB/s') !== false) {
+                $up = $up * 8;
+            }
+            
+            $avgDown += $down;
+            $avgUp += $up;
         }
         
         if ($count > 0) {
-            $metrics['平均下载'] = round($avgDown / $count, 2) . ' Mbps';
-            $metrics['平均上传'] = round($avgUp / $count, 2) . ' Mbps';
+            $metrics['Avg Download'] = round($avgDown / $count, 2) . ' Mbps';
+            $metrics['Avg Upload'] = round($avgUp / $count, 2) . ' Mbps';
+            $metrics['Test Nodes'] = $count;
         }
     }
     
@@ -248,6 +291,42 @@ function parseResponse($content) {
     // 提取平均响应时间
     if (preg_match('/平均.*?(\d+)ms/i', $content, $match)) {
         $metrics['平均延迟'] = $match[1] . ' ms';
+    }
+    
+    return $metrics;
+}
+
+/**
+ * 解析回程路由
+ */
+function parseRouteTrace($content) {
+    $metrics = [];
+    
+    // 提取三网回程信息
+    if (preg_match('/电信.*?(\S+)/u', $content, $match)) {
+        $metrics['电信回程'] = trim($match[1]);
+    }
+    
+    if (preg_match('/联通.*?(\S+)/u', $content, $match)) {
+        $metrics['联通回程'] = trim($match[1]);
+    }
+    
+    if (preg_match('/移动.*?(\S+)/u', $content, $match)) {
+        $metrics['移动回程'] = trim($match[1]);
+    }
+    
+    // 如果没有匹配到，尝试简单提取
+    if (empty($metrics)) {
+        $lines = explode("\n", $content);
+        $routeCount = 0;
+        foreach ($lines as $line) {
+            if (preg_match('/traceroute|route/i', $line)) {
+                $routeCount++;
+            }
+        }
+        if ($routeCount > 0) {
+            $metrics['路由测试'] = $routeCount . ' routes traced';
+        }
     }
     
     return $metrics;

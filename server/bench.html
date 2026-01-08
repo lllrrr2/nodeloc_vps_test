@@ -220,6 +220,9 @@
                     <button class="btn btn-primary me-2 mb-2" id="copyAllBtn">
                         <i class="bi bi-clipboard"></i> Copy All
                     </button>
+                    <button class="btn btn-info me-2 mb-2" id="generateImageBtn">
+                        <i class="bi bi-image"></i> Generate Image
+                    </button>
                     <button class="btn btn-success me-2 mb-2" id="downloadBtn">
                         <i class="bi bi-download"></i> Download
                     </button>
@@ -246,7 +249,17 @@
 
         <!-- Image Preview -->
         <div class="glass-card p-4 mb-4 text-center d-none" id="imagePreview">
-            <h3 class="text-white mb-4"><i class="bi bi-graph-up"></i> Visual Report</h3>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="text-white mb-0"><i class="bi bi-image"></i> Visual Report</h3>
+                <div>
+                    <button class="btn btn-sm btn-success me-2" id="downloadImageBtn">
+                        <i class="bi bi-download"></i> Download Image
+                    </button>
+                    <button class="btn btn-sm btn-outline-light" id="closeImageBtn">
+                        <i class="bi bi-x-lg"></i> Close
+                    </button>
+                </div>
+            </div>
             <img id="previewImg" alt="Benchmark Report" class="img-fluid img-thumbnail">
         </div>
 
@@ -312,8 +325,8 @@
             console.log('Attempting to load file:', filePath);
             
             try {
-                // 使用 result.php 来获取文件内容
-                const fetchUrl = `result.php?file=${encodeURIComponent(filePath)}`;
+                // 使用 result.php 来获取文件内容（使用绝对路径）
+                const fetchUrl = `/result.php?file=${encodeURIComponent(filePath)}`;
                 console.log('Fetching via result.php:', fetchUrl);
                 
                 const response = await fetch(fetchUrl);
@@ -436,6 +449,89 @@
             const orig = btn.innerHTML;
             btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
             setTimeout(() => btn.innerHTML = orig, 2000);
+        });
+
+        // Generate Image
+        document.getElementById('generateImageBtn').addEventListener('click', () => {
+            const filePath = getFilePath();
+            
+            if (!filePath) {
+                alert('No file specified');
+                return;
+            }
+            
+            // Extract year, month, and filename from filePath
+            const parts = filePath.split('/');
+            let year, month, fileName;
+            
+            if (parts.length >= 3) {
+                year = parts[0];
+                month = parts[1];
+                fileName = parts[2];
+            } else {
+                // Fallback: use current date
+                const now = new Date();
+                year = now.getFullYear();
+                month = String(now.getMonth() + 1).padStart(2, '0');
+                fileName = parts[parts.length - 1];
+            }
+            
+            // Generate image URL
+            const imageUrl = `/image.php?file=${encodeURIComponent(fileName)}&year=${year}&month=${month}`;
+            
+            // Show loading state
+            const btn = document.getElementById('generateImageBtn');
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...';
+            btn.disabled = true;
+            
+            // Load and display image
+            const img = new Image();
+            img.onload = () => {
+                // Display the image in preview section
+                const previewImg = document.getElementById('previewImg');
+                previewImg.src = imageUrl;
+                document.getElementById('imagePreview').classList.remove('d-none');
+                
+                // Scroll to image
+                document.getElementById('imagePreview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+                // Reset button state
+                btn.innerHTML = '<i class="bi bi-check2"></i> Generated!';
+                btn.disabled = false;
+                setTimeout(() => {
+                    btn.innerHTML = origHtml;
+                }, 3000);
+            };
+            
+            img.onerror = () => {
+                alert('Failed to generate image. Please try again.');
+                btn.innerHTML = origHtml;
+                btn.disabled = false;
+            };
+            
+            // Trigger image load
+            img.src = imageUrl;
+        });
+
+        // Download Image
+        document.getElementById('downloadImageBtn').addEventListener('click', () => {
+            const previewImg = document.getElementById('previewImg');
+            if (!previewImg.src) {
+                alert('No image to download');
+                return;
+            }
+            
+            // Download the image
+            const a = document.createElement('a');
+            a.href = previewImg.src;
+            a.download = 'benchmark-report.png';
+            a.click();
+        });
+
+        // Close Image Preview
+        document.getElementById('closeImageBtn').addEventListener('click', () => {
+            document.getElementById('imagePreview').classList.add('d-none');
         });
 
         // Download
