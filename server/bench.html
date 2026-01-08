@@ -269,28 +269,25 @@
         console.log('URL params:', urlParams.toString());
         console.log('URL path:', urlPath);
         
-        // Get file parameter from URL (supports both 'file' and 'filename')
+        // Get file parameter from URL query string
         let filePath = urlParams.get('file') || urlParams.get('filename');
         
         console.log('File path from param:', filePath);
         
-        // If no parameter, try to extract from URL path
+        // If no parameter, construct file path from URL
+        // For URLs like: /result/2026/01/NL1767859366-65A535.txt
+        // Or: /bench.html?file=2026/01/NL1767859366-65A535.txt
         if (!filePath) {
-            const segments = urlPath.split('/').filter(s => s);
-            console.log('Path segments:', segments);
-            
-            // Handle /result/YYYY/MM/filename.txt format
-            // Extract the part after /result/ and use it as file path
-            if (segments[0] === 'result' && segments.length >= 4) {
-                // Remove 'result' from the beginning
-                filePath = segments.slice(1).join('/');
-                console.log('Extracted file path from /result/:', filePath);
-            }
-            // Handle direct /YYYY/MM/filename.txt format
-            else if (segments.length >= 3 && !segments.includes('bench.html')) {
-                // Use the full path after domain as file path
-                filePath = segments.join('/');
-                console.log('Extracted file path from direct URL:', filePath);
+            // If URL path contains the actual txt file, extract the relative path
+            if (urlPath.endsWith('.txt')) {
+                // Extract everything after /result/ or use full path
+                if (urlPath.includes('/result/')) {
+                    filePath = urlPath.split('/result/')[1];
+                } else {
+                    // Remove leading slash
+                    filePath = urlPath.substring(1);
+                }
+                console.log('Extracted file path from URL:', filePath);
             }
         }
         
