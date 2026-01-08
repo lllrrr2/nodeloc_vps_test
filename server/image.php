@@ -241,10 +241,21 @@ function generateResultImage($data) {
     error_log("[generateResultImage] Finding Chinese font");
     $fontFile = findChineseFont();
     if ($fontFile) {
-        $draw->setFont($fontFile);
-        error_log("Using font: " . $fontFile);
+        error_log("Found font file: " . $fontFile);
+        try {
+            // TTC字体需要指定索引，使用[0]表示第一个字体
+            if (strpos($fontFile, '.ttc') !== false) {
+                $draw->setFont($fontFile . '[0]');
+                error_log("Set TTC font with index: " . $fontFile . '[0]');
+            } else {
+                $draw->setFont($fontFile);
+                error_log("Set font: " . $fontFile);
+            }
+        } catch (Exception $e) {
+            error_log("Font set error: " . $e->getMessage());
+        }
     } else {
-        error_log("WARNING: No Chinese font found, text may not display correctly");
+        error_log("WARNING: No Chinese font found");
     }
     
     // 预计算高度
