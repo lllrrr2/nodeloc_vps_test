@@ -217,7 +217,7 @@
                     <p class="text-white-50 mb-0">Comprehensive server performance testing report</p>
                 </div>
                 <div class="col-lg-6 text-lg-end">
-                    <button class="btn btn-primary me-2 mb-2" id="copyAllBtn">
+                    <button class="btn btn-light me-2 mb-2" id="copyAllBtn">
                         <i class="bi bi-clipboard"></i> Copy All
                     </button>
                     <button class="btn btn-info me-2 mb-2" id="generateImageBtn">
@@ -252,6 +252,9 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="text-white mb-0"><i class="bi bi-image"></i> Visual Report</h3>
                 <div>
+                    <button class="btn btn-sm btn-warning me-2" id="copyImageBtn">
+                        <i class="bi bi-clipboard"></i> Copy Image
+                    </button>
                     <button class="btn btn-sm btn-success me-2" id="downloadImageBtn">
                         <i class="bi bi-download"></i> Download Image
                     </button>
@@ -512,6 +515,45 @@
             
             // Trigger image load
             img.src = imageUrl;
+        });
+
+        // Copy Image to Clipboard
+        document.getElementById('copyImageBtn').addEventListener('click', async () => {
+            const previewImg = document.getElementById('previewImg');
+            const btn = document.getElementById('copyImageBtn');
+            const origHtml = btn.innerHTML;
+            
+            if (!previewImg.src) {
+                alert('No image to copy');
+                return;
+            }
+            
+            try {
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Copying...';
+                btn.disabled = true;
+                
+                // Fetch the image as blob
+                const response = await fetch(previewImg.src);
+                const blob = await response.blob();
+                
+                // Copy to clipboard using Clipboard API
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        [blob.type]: blob
+                    })
+                ]);
+                
+                btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+                setTimeout(() => {
+                    btn.innerHTML = origHtml;
+                    btn.disabled = false;
+                }, 2000);
+            } catch (error) {
+                console.error('Failed to copy image:', error);
+                alert('Failed to copy image. Your browser may not support this feature.');
+                btn.innerHTML = origHtml;
+                btn.disabled = false;
+            }
         });
 
         // Download Image

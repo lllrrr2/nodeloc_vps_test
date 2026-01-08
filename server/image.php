@@ -95,6 +95,40 @@ function translateMetricKey($key) {
 }
 
 /**
+ * 获取section对应的图标
+ */
+function getSectionIcon($sectionName) {
+    $icons = [
+        'YABS' => '📊',
+        'IP质量' => '🌐',
+        '流媒体' => '🎬',
+        '响应' => '⚡',
+        '多线程测速' => '🚀',
+        '单线程测速' => '📈',
+        '回程路由' => '🔄',
+    ];
+    return $icons[$sectionName] ?? '📋';
+}
+
+/**
+ * 获取section对应的颜色标记
+ */
+function getSectionColor($image, $sectionName) {
+    $colors = [
+        'YABS' => [66, 165, 245],        // 蓝色
+        'IP质量' => [102, 187, 106],      // 绿色
+        '流媒体' => [255, 112, 67],       // 橙红色
+        '响应' => [255, 202, 40],         // 黄色
+        '多线程测速' => [171, 71, 188],   // 紫色
+        '单线程测速' => [38, 198, 218],   // 青色
+        '回程路由' => [255, 167, 38],     // 橙色
+    ];
+    
+    $color = $colors[$sectionName] ?? [158, 158, 158]; // 默认灰色
+    return imagecolorallocate($image, $color[0], $color[1], $color[2]);
+}
+
+/**
  * 解析测试结果
  */
 function parseTestResults($content) {
@@ -373,8 +407,16 @@ function generateResultImage($data) {
     // 填充背景
     imagefilledrectangle($image, 0, 0, $width, $height, $bgColor);
     
-    // 查找字体
+    // 查找字体 - 优先使用支持中文的字体
     $fontPaths = [
+        // 中文字体路径
+        __DIR__ . '/fonts/NotoSansSC-Regular.ttf',
+        __DIR__ . '/fonts/NotoSansCJK-Regular.ttf',
+        __DIR__ . '/fonts/SourceHanSansCN-Regular.ttf',
+        '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+        '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttf',
+        '/System/Library/Fonts/PingFang.ttc',
+        // 备用英文字体
         __DIR__ . '/fonts/DejaVuSans.ttf',
         __DIR__ . '/DejaVuSans.ttf',
         '/www/wwwroot/bench.nodeloc.cc/fonts/DejaVuSans.ttf',
@@ -401,17 +443,34 @@ function generateResultImage($data) {
     imagefilledrectangle($image, 0, 0, $width, $headerHeight, $headerBg);
     imagefilledrectangle($image, 0, $headerHeight - 20, $width, $headerHeight, $headerBgDark);
     
-    // 标题文本（全英文）
+    // 绘制装饰性图形元素
+    // 右上角装饰圆圈
+    imagefilledellipse($image, $width - 50, 30, 80, 80, $headerBgDark);
+    imagefilledellipse($image, $width - 70, 50, 60, 60, $headerBg);
+    
+    // 左侧装饰方块
+    $decorSize = 12;
+    for ($i = 0; $i < 3; $i++) {
+        $x = $padding - 5 + ($i * 6);
+        $y = 10 + ($i * 6);
+        imagefilledrectangle($image, $x, $y, $x + $decorSize, $y + $decorSize, $accentColor);
+    }
+    
+    // 标题文本
     $title = "NodeLoc VPS Benchmark Report";
     $subtitle = "Generated: " . $data['timestamp'];
     
     if ($fontExists) {
+        // 添加图标风格的emoji/符号
+        $iconText = "⚡"; // 闪电图标
+        imagettftext($image, 32, 0, $padding, 45, $accentColor, $fontFile, $iconText);
+        
         // 标题
-        imagettftext($image, 24, 0, $padding, 40, $whiteColor, $fontFile, $title);
+        imagettftext($image, 24, 0, $padding + 50, 40, $whiteColor, $fontFile, $title);
         // 副标题
-        imagettftext($image, 12, 0, $padding, 65, $whiteColor, $fontFile, $subtitle);
+        imagettftext($image, 12, 0, $padding + 50, 65, $whiteColor, $fontFile, $subtitle);
         // 装饰线
-        imagefilledrectangle($image, $padding, 75, $padding + 150, 78, $accentColor);
+        imagefilledrectangle($image, $padding + 50, 75, $padding + 200, 78, $accentColor);
     } else {
         imagestring($image, 5, $padding, 25, $title, $whiteColor);
         imagestring($image, 3, $padding, 55, $subtitle, $whiteColor);
@@ -428,44 +487,77 @@ function generateResultImage($data) {
         // 翻译section名称为英文
         $sectionNameEn = translateSectionName($sectionName);
         
+        // 为每个section选择图标
+        $sectionIcon = getSectionIcon($sectionName);
+        
         // 绘制section标题（圆角效果）
         drawRoundedRect($image, $padding, $currentY, $width - $padding, $currentY + $sectionHeight, 8, $sectionBg, $sectionBorder);
         
+        // 绘制左侧彩色标记条
+        $markerColor = getSectionColor($image, $sectionName);
+        imagefilledrectangle($image, $padding + 5, $currentY + 10, $padding + 10, $currentY + $sectionHeight - 10, $markerColor);
+        
         if ($fontExists) {
-            imagettftext($image, 15, 0, $padding + 15, $currentY + 30, $headerBg, $fontFile, $sectionNameEn);
+            // 绘制图标
+            imagettftext($image, 18, 0, $padding + 20, $currentY + 32, $headerBg, $fontFile, $sectionIcon);
+            // 绘制标题
+            imagettftext($image, 15, 0, $padding + 50, $currentY + 30, $headerBg, $fontFile, $sectionNameEn);
         } else {
-            imagestring($image, 4, $padding + 15, $currentY + 15, $sectionNameEn, $headerBg);
+            imagestring($image, 4, $padding + 15, $currentY + 15, $sectionIcon . " " . $sectionNameEn, $headerBg);
         }
         
         $currentY += $sectionHeight + 10;
         
-        // 绘制metrics（全英文）
+        // 绘制metrics
+        $metricIndex = 0;
         foreach ($section['metrics'] as $key => $value) {
             $keyEn = translateMetricKey($key);
             $text = "{$keyEn}: {$value}";
             
             // 根据内容选择颜色和图标
             $color = $textColor;
-            $icon = "  ";
+            $icon = "•";
+            $bgRect = false;
+            
             if ($value === '✓') {
                 $color = $successColor;
-                $icon = "✓ ";
-                $text = "{$icon}{$keyEn}";
+                $icon = "✓";
+                $text = "{$icon} {$keyEn}";
+                $bgRect = true;
             } elseif ($value === '✗') {
                 $color = $failColor;
-                $icon = "✗ ";
-                $text = "{$icon}{$keyEn}";
+                $icon = "✗";
+                $text = "{$icon} {$keyEn}";
+                $bgRect = true;
             }
             
-            // 绘制项目符号
+            // 为带背景的项目绘制浅色背景
+            if ($bgRect && $fontExists) {
+                $bgAlpha = imagecolorallocatealpha($image, 
+                    $value === '✓' ? 200 : 255, 
+                    $value === '✓' ? 230 : 220, 
+                    $value === '✓' ? 201 : 220, 
+                    100
+                );
+                drawRoundedRect($image, $padding + 20, $currentY + 2, $padding + 300, $currentY + 28, 4, $bgAlpha, $bgAlpha);
+            }
+            
+            // 绘制项目符号和文本
             if ($fontExists) {
-                imagefilledellipse($image, $padding + 25, $currentY + 12, 6, 6, $color);
-                imagettftext($image, 12, 0, $padding + 35, $currentY + 18, $textColor, $fontFile, $text);
+                // 绘制渐变效果的圆点
+                if (!$bgRect) {
+                    imagefilledellipse($image, $padding + 30, $currentY + 14, 8, 8, $markerColor);
+                    imagefilledellipse($image, $padding + 30, $currentY + 14, 6, 6, $color);
+                }
+                
+                // 绘制文本
+                imagettftext($image, 11, 0, $padding + ($bgRect ? 35 : 42), $currentY + 19, $bgRect ? $color : $textColor, $fontFile, $text);
             } else {
-                imagestring($image, 3, $padding + 20, $currentY + 5, "* " . $text, $color);
+                imagestring($image, 3, $padding + 20, $currentY + 5, $icon . " " . $text, $color);
             }
             
             $currentY += $metricsLineHeight;
+            $metricIndex++;
         }
         
         $currentY += 15;
@@ -475,12 +567,20 @@ function generateResultImage($data) {
     $footerY = $height - 40;
     imagefilledrectangle($image, 0, $footerY, $width, $height, $headerBgDark);
     
+    // 底部装饰元素
+    for ($i = 0; $i < 5; $i++) {
+        $x = $width - 100 + ($i * 15);
+        $size = 6 - $i;
+        imagefilledellipse($image, $x, $footerY + 20, $size, $size, $accentColor);
+    }
+    
     // 水印和版权信息
-    $watermark = "Powered by bench.nodeloc.cc";
+    $watermark = "⚡ Powered by bench.nodeloc.cc";
     if ($fontExists) {
         imagettftext($image, 10, 0, $padding, $footerY + 25, $whiteColor, $fontFile, $watermark);
         // 右侧添加小图标
-        imagettftext($image, 9, 0, $width - 150, $footerY + 25, $whiteColor, $fontFile, "NodeLoc.com");
+        $rightText = "📊 NodeLoc.com";
+        imagettftext($image, 9, 0, $width - 150, $footerY + 25, $whiteColor, $fontFile, $rightText);
     } else {
         imagestring($image, 2, $padding, $footerY + 15, $watermark, $whiteColor);
         imagestring($image, 2, $width - 120, $footerY + 15, "NodeLoc.com", $whiteColor);
