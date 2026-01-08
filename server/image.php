@@ -8,8 +8,17 @@
  * - DejaVu Sans 字体 (可选，用于中文显示)
  */
 
+// 启用错误报告用于调试
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // 不在浏览器显示，只记录到日志
+
+// 记录请求开始
+error_log("=== Image generation request started ===");
+error_log("GET parameters: " . print_r($_GET, true));
+
 // 检查 GD 扩展
 if (!extension_loaded('gd')) {
+    error_log("ERROR: GD extension not loaded");
     header('Content-Type: text/plain; charset=utf-8');
     http_response_code(500);
     die("错误: PHP GD 扩展未安装\n\n" .
@@ -19,6 +28,8 @@ if (!extension_loaded('gd')) {
         "然后重启Web服务器: sudo systemctl restart apache2 或 nginx");
 }
 
+error_log("GD extension loaded successfully");
+
 // 设置字符编码和内容类型
 mb_internal_encoding('UTF-8');
 header('Content-Type: image/png');
@@ -26,8 +37,10 @@ header('Cache-Control: no-cache, no-store, must-revalidate');
 
 // 获取测试结果文件路径
 $filePath = $_GET['file'] ?? '';
+error_log("File path from GET: " . $filePath);
 
 if (empty($filePath)) {
+    error_log("ERROR: No file specified in request");
     generateErrorImage("错误: 未指定文件");
     exit;
 }
@@ -38,24 +51,51 @@ $year = $_GET['year'] ?? date('Y');
 $month = $_GET['month'] ?? date('m');
 
 $fullPath = __DIR__ . "/{$year}/{$month}/{$filePath}";
+error_log("Full path constructed: " . $fullPath);
+error_log("File exists: " . (file_exists($fullPath) ? 'yes' : 'no'));
+error_log("Is file: " . (is_file($fullPath) ? 'yes' : 'no'));
 
 if (!file_exists($fullPath) || !is_file($fullPath)) {
+    error_log("ERROR: File not found or not a file: " . $fullPath);
     generateErrorImage("错误: 文件不存在");
     exit;
 }
 
 // 读取测试结果
+error_log("Reading file content...");
 $content = file_get_contents($fullPath);
 if ($content === false) {
+    error_log("ERROR: Failed to read file content");
     generateErrorImage("错误: 无法读取文件");
     exit;
 }
 
+error_log("File content length: " . strlen($content) . " bytes");
+
 // 解析测试结果
+error_log("Parsing test results...");
 $data = parseTestResults($content);
 
+// 记录解析结果
+error_log("Parsed sections: " . implode(", ", array_keys($data['sections'])));
+foreach ($data['sections'] as $name => $section) {
+    error_log("Section '$name' has " . count($section['metrics']) . " metrics");
+}
+
 // 生成图片
-generateResultImage($data);
+error_log("Starting image generation...");
+try {
+    generateResultImage($data);
+    error_log("=== Image generation completed successfully ===");
+} catch (Exception $e) {
+    error_log("Image generation error: " . $e->getMessage());
+    error_log("Stack trace: " . $e->getTraceAsString());
+    generateErrorImage("Error: Failed to generate image - " . $e->getMessage());
+} catch (Error $e) {
+    error_log("PHP Error during image generation: " . $e->getMessage());
+    error_log("Stack trace: " . $e->getTraceAsString());
+    generateErrorImage("Error: PHP Error - " . $e->getMessage());
+}
 
 /**
  * 翻译Section名称为英文
@@ -234,12 +274,19 @@ function parseYABS($content) {
 function parseIPQuality($content) {
     $metrics = [];
     
-    if (preg_match('/IP类型:\s*(.+)/', $content, $match)) {
-        $metrics['IP类型'] = trim($match[1]);
+    // IP类型
+    if (preg_match('/IP类型[：:]*\s*(.+)/u', $content, $match)) {
+        $metrics['IP Type'] = trim($match[1]);
     }
     
-    if (preg_match('/黑名单记录统计.*?(\d+)\/(\d+)/s', $content, $match)) {
-        $metrics['黑名单'] = "{$match[1]}/{$match[2]}";
+    // 自治系统
+    if (preg_match('/自治系统号[：:]*\s*(AS\d+)/u', $content, $match)) {
+        $metrics['ASN'] = trim($match[1]);
+    }
+    
+    // 风险评分
+    if (preg_match('/IP2Location[：:]*\s*(\d+)\|(.+)/u', $content, $match)) {
+        $metrics['Risk Score'] = $match[1] . ' (' . trim($match[2]) . ')';
     }
     
     return $metrics;
@@ -331,36 +378,31 @@ function parseResponse($content) {
 }
 
 /**
- * 解析回程路由
+ * Parse route trace data - extract all 9 routes
  */
 function parseRouteTrace($content) {
     $metrics = [];
     
-    // 提取三网回程信息
-    if (preg_match('/电信.*?(\S+)/u', $content, $match)) {
-        $metrics['电信回程'] = trim($match[1]);
-    }
+    // Extract all route trace entries (No:X/9 Traceroute to ...)
+    preg_match_all('/No:(\d+)\/9 Traceroute to ([^\n]+)/u', $content, $matches, PREG_SET_ORDER);
     
-    if (preg_match('/联通.*?(\S+)/u', $content, $match)) {
-        $metrics['联通回程'] = trim($match[1]);
-    }
-    
-    if (preg_match('/移动.*?(\S+)/u', $content, $match)) {
-        $metrics['移动回程'] = trim($match[1]);
-    }
-    
-    // 如果没有匹配到，尝试简单提取
-    if (empty($metrics)) {
-        $lines = explode("\n", $content);
-        $routeCount = 0;
-        foreach ($lines as $line) {
-            if (preg_match('/traceroute|route/i', $line)) {
-                $routeCount++;
-            }
-        }
-        if ($routeCount > 0) {
-            $metrics['路由测试'] = $routeCount . ' routes traced';
-        }
+    foreach ($matches as $match) {
+        $routeNum = $match[1];
+        $destination = $match[2];
+        
+        // Clean up destination (remove Chinese characters and extra spaces)
+        // Extract key information: country, city, ISP type
+        $destination = preg_replace('/中国\s*/u', 'China ', $destination);
+        $destination = preg_replace('/广东/u', 'Guangdong', $destination);
+        $destination = preg_replace('/上海/u', 'Shanghai', $destination);
+        $destination = preg_replace('/北京/u', 'Beijing', $destination);
+        $destination = preg_replace('/电信/u', 'CT', $destination); // China Telecom
+        $destination = preg_replace('/联通/u', 'CU', $destination); // China Unicom
+        $destination = preg_replace('/移动/u', 'CM', $destination); // China Mobile
+        $destination = preg_replace('/\s+/', ' ', $destination);
+        $destination = trim($destination);
+        
+        $metrics["Route $routeNum"] = $destination;
     }
     
     return $metrics;
@@ -435,6 +477,11 @@ function generateResultImage($data) {
         }
     }
     
+    // 如果没有找到字体文件，记录日志并使用内置字体
+    if (!$fontExists) {
+        error_log("Warning: No TrueType font found. Using built-in fonts. Consider installing fonts with: apt-get install fonts-dejavu-core");
+    }
+    
     // 绘制现代化标题区域（渐变效果通过两层矩形模拟）
     imagefilledrectangle($image, 0, 0, $width, $headerHeight, $headerBg);
     imagefilledrectangle($image, 0, $headerHeight - 20, $width, $headerHeight, $headerBgDark);
@@ -467,6 +514,10 @@ function generateResultImage($data) {
         imagettftext($image, 12, 0, $padding + 50, 65, $whiteColor, $fontFile, $subtitle);
         // 装饰线
         imagefilledrectangle($image, $padding + 50, 75, $padding + 200, 78, $accentColor);
+    } else {
+        // 使用内置字体绘制标题
+        imagestring($image, 5, $padding + 10, 25, "NodeLoc VPS Benchmark", $whiteColor);
+        imagestring($image, 3, $padding + 10, 50, $subtitle, $whiteColor);
     }
     
     // 开始绘制内容
@@ -475,6 +526,25 @@ function generateResultImage($data) {
     // 准备颜色数组
     $colors = [$chartBlue, $chartGreen, $chartOrange, $chartPurple, $chartCyan];
     
+    // 检查是否有任何数据
+    $hasData = false;
+    foreach ($data['sections'] as $section) {
+        if (!empty($section['metrics'])) {
+            $hasData = true;
+            break;
+        }
+    }
+    
+    // 如果没有数据，显示提示信息
+    if (!$hasData) {
+        if ($fontFile) {
+            imagettftext($image, 14, 0, $padding, $currentY + 50, $textColor, $fontFile, "No benchmark data found in the file.");
+        } else {
+            imagestring($image, 4, $padding, $currentY + 30, "No benchmark data found", $textColor);
+        }
+        $currentY += 100;
+    }
+    
     // 1. 绘制YABS信息卡片
     if (isset($data['sections']['YABS']) && !empty($data['sections']['YABS']['metrics'])) {
         $yabsMetrics = $data['sections']['YABS']['metrics'];
@@ -482,6 +552,8 @@ function generateResultImage($data) {
         // 绘制section标题
         if ($fontFile) {
             imagettftext($image, 16, 0, $padding, $currentY, $headerBg, $fontFile, "📊 System Information");
+        } else {
+            imagestring($image, 5, $padding, $currentY - 10, "System Information", $headerBg);
         }
         $currentY += 35;
         
@@ -511,6 +583,8 @@ function generateResultImage($data) {
     if (isset($data['sections']['IP质量']) && !empty($data['sections']['IP质量']['metrics'])) {
         if ($fontFile) {
             imagettftext($image, 16, 0, $padding, $currentY, $headerBg, $fontFile, "🌐 IP Quality");
+        } else {
+            imagestring($image, 5, $padding, $currentY - 10, "IP Quality", $headerBg);
         }
         $currentY += 35;
         
@@ -535,6 +609,8 @@ function generateResultImage($data) {
     if (isset($data['sections']['流媒体']) && !empty($data['sections']['流媒体']['metrics'])) {
         if ($fontFile) {
             imagettftext($image, 16, 0, $padding, $currentY, $headerBg, $fontFile, "🎬 Streaming Services Unlock Status");
+        } else {
+            imagestring($image, 5, $padding, $currentY - 10, "Streaming Services", $headerBg);
         }
         $currentY += 35;
         
@@ -549,6 +625,8 @@ function generateResultImage($data) {
         
         if ($fontFile) {
             imagettftext($image, 16, 0, $padding, $currentY, $headerBg, $fontFile, "🚀 Multi-thread Speed Test");
+        } else {
+            imagestring($image, 5, $padding, $currentY - 10, "Multi-thread Speed Test", $headerBg);
         }
         $currentY += 35;
         
@@ -577,6 +655,8 @@ function generateResultImage($data) {
         
         if ($fontFile) {
             imagettftext($image, 16, 0, $padding, $currentY, $headerBg, $fontFile, "📈 Single-thread Speed Test");
+        } else {
+            imagestring($image, 5, $padding, $currentY - 10, "Single-thread Speed Test", $headerBg);
         }
         $currentY += 35;
         
@@ -603,6 +683,8 @@ function generateResultImage($data) {
     if (isset($data['sections']['响应']) && !empty($data['sections']['响应']['metrics'])) {
         if ($fontFile) {
             imagettftext($image, 16, 0, $padding, $currentY, $headerBg, $fontFile, "⚡ Response Test");
+        } else {
+            imagestring($image, 5, $padding, $currentY - 10, "Response Test", $headerBg);
         }
         $currentY += 35;
         
@@ -610,40 +692,66 @@ function generateResultImage($data) {
         foreach ($responseMetrics as $key => $value) {
             if ($fontFile) {
                 imagettftext($image, 12, 0, $padding + 20, $currentY, $textColor, $fontFile, "$key: $value");
+            } else {
+                imagestring($image, 3, $padding + 20, $currentY - 5, "$key: $value", $textColor);
             }
             $currentY += 30;
         }
         $currentY += 20;
     }
     
+    // 7. Display route trace (9 routes)
+    if (isset($data['sections']['回程路由']) && !empty($data['sections']['回程路由']['metrics'])) {
+        if ($fontFile) {
+            imagettftext($image, 16, 0, $padding, $currentY, $headerBg, $fontFile, "🔄 Route Trace Back (9 Routes)");
+        } else {
+            imagestring($image, 5, $padding, $currentY - 10, "Route Trace Back", $headerBg);
+        }
+        $currentY += 35;
+        
+        $currentY = drawRouteGrid($image, $padding, $currentY, $width - $padding * 2, 
+                                 $data['sections']['回程路由']['metrics'], $fontFile);
+        $currentY += 30;
+    }
+    
     // 裁剪到实际使用的高度
-    $finalHeight = $currentY + 60;
+    $finalHeight = max($currentY + 60, $headerHeight + 200); // 确保最小高度
     $finalImage = imagecreatetruecolor($width, $finalHeight);
-    imagecopy($finalImage, $image, 0, 0, 0, 0, $width, $finalHeight);
+    
+    // 填充背景
+    $bgColor2 = imagecolorallocate($finalImage, 248, 249, 250);
+    imagefilledrectangle($finalImage, 0, 0, $width, $finalHeight, $bgColor2);
+    
+    // 复制内容
+    imagecopy($finalImage, $image, 0, 0, 0, 0, $width, min($currentY + 60, $estimatedHeight));
     imagedestroy($image);
     $image = $finalImage;
     
     // 添加现代化底部区域
     $footerY = $finalHeight - 45;
-    imagefilledrectangle($image, 0, $footerY, $width, $finalHeight, $headerBgDark);
+    $footerBgDark = imagecolorallocate($image, 13, 71, 161);
+    $accentColor2 = imagecolorallocate($image, 255, 167, 38);
+    $whiteColor2 = imagecolorallocate($image, 255, 255, 255);
+    
+    imagefilledrectangle($image, 0, $footerY, $width, $finalHeight, $footerBgDark);
     
     // 底部装饰元素
     for ($i = 0; $i < 5; $i++) {
         $x = $width - 100 + ($i * 15);
         $size = 6 - $i;
-        imagefilledellipse($image, $x, $footerY + 22, $size, $size, $accentColor);
+        imagefilledellipse($image, $x, $footerY + 22, $size, $size, $accentColor2);
     }
     
     // 水印和版权信息
-    $watermark = "⚡ Powered by bench.nodeloc.cc";
+    $watermark = "Powered by bench.nodeloc.cc";
     if ($fontFile) {
-        imagettftext($image, 10, 0, $padding, $footerY + 28, $whiteColor, $fontFile, $watermark);
+        imagettftext($image, 10, 0, $padding, $footerY + 28, $whiteColor2, $fontFile, $watermark);
         // 右侧添加小图标
-        $rightText = "📊 NodeLoc.com";
-        imagettftext($image, 9, 0, $width - 150, $footerY + 28, $whiteColor, $fontFile, $rightText);
+        $rightText = "NodeLoc.com";
+        imagettftext($image, 9, 0, $width - 150, $footerY + 28, $whiteColor2, $fontFile, $rightText);
     } else {
-        imagestring($image, 2, $padding, $footerY + 18, $watermark, $whiteColor);
-        imagestring($image, 2, $width - 120, $footerY + 18, "NodeLoc.com", $whiteColor);
+        imagestring($image, 2, $padding, $footerY + 18, $watermark, $whiteColor2);
+        imagestring($image, 2, $width - 120, $footerY + 18, "NodeLoc.com", $whiteColor2);
     }
     
     // 输出图片
@@ -664,8 +772,12 @@ function drawBarChart($image, $x, $y, $width, $height, $data, $colors, $fontFile
     drawRoundedRect($image, $x, $y, $x + $width, $y + $height, 8, $bgColor, $gridColor);
     
     // 绘制标题
-    if ($title && $fontFile) {
-        imagettftext($image, 12, 0, $x + 15, $y + 25, $textColor, $fontFile, $title);
+    if ($title) {
+        if ($fontFile) {
+            imagettftext($image, 12, 0, $x + 15, $y + 25, $textColor, $fontFile, $title);
+        } else {
+            imagestring($image, 4, $x + 15, $y + 10, $title, $textColor);
+        }
     }
     
     $chartY = $y + ($title ? 40 : 15);
@@ -692,6 +804,8 @@ function drawBarChart($image, $x, $y, $width, $height, $data, $colors, $fontFile
         // 绘制标签
         if ($fontFile) {
             imagettftext($image, 10, 0, $x + 15, $currentY + 18, $textColor, $fontFile, $item['label']);
+        } else {
+            imagestring($image, 3, $x + 15, $currentY + 8, $item['label'], $textColor);
         }
         
         // 绘制条形（带圆角）
@@ -701,6 +815,8 @@ function drawBarChart($image, $x, $y, $width, $height, $data, $colors, $fontFile
         // 绘制数值
         if ($fontFile) {
             imagettftext($image, 10, 0, $barX + $barWidth + 10, $currentY + 18, $textColor, $fontFile, $item['valueText']);
+        } else {
+            imagestring($image, 3, $barX + $barWidth + 10, $currentY + 8, $item['valueText'], $textColor);
         }
         
         $currentY += $barHeight + $barSpacing;
@@ -720,8 +836,12 @@ function drawProgressBar($image, $x, $y, $width, $percentage, $color, $fontFile,
     $barHeight = 24;
     
     // 绘制标签
-    if ($label && $fontFile) {
-        imagettftext($image, 10, 0, $x, $y - 5, $textColor, $fontFile, $label);
+    if ($label) {
+        if ($fontFile) {
+            imagettftext($image, 10, 0, $x, $y - 5, $textColor, $fontFile, $label);
+        } else {
+            imagestring($image, 3, $x, $y - 15, $label, $textColor);
+        }
         $y += 20;
     }
     
@@ -735,9 +855,11 @@ function drawProgressBar($image, $x, $y, $width, $percentage, $color, $fontFile,
     }
     
     // 绘制百分比文字
+    $text = round($percentage, 1) . '%';
     if ($fontFile) {
-        $text = round($percentage, 1) . '%';
         imagettftext($image, 10, 0, $x + $width/2 - 20, $y + 17, $textColor, $fontFile, $text);
+    } else {
+        imagestring($image, 3, $x + $width/2 - 15, $y + 8, $text, $textColor);
     }
     
     return $y + $barHeight + 5;
@@ -773,11 +895,83 @@ function drawStreamingGrid($image, $x, $y, $width, $data, $fontFile) {
         // 绘制卡片
         drawRoundedRect($image, $currentX, $currentY, $currentX + $itemWidth, $currentY + $itemHeight, 8, $bgColor, $borderColor);
         
-        // 绘制图标
+        // 绘制图标和文字
         $icon = ($status === '✓') ? '✓' : '✗';
         if ($fontFile) {
             imagettftext($image, 18, 0, $currentX + 15, $currentY + 32, $color, $fontFile, $icon);
             imagettftext($image, 11, 0, $currentX + 45, $currentY + 32, $textColor, $fontFile, $service);
+        } else {
+            imagestring($image, 5, $currentX + 15, $currentY + 15, $icon, $color);
+            imagestring($image, 3, $currentX + 45, $currentY + 20, substr($service, 0, 15), $textColor);
+        }
+        
+        $col++;
+        if ($col >= $cols) {
+            $col = 0;
+            $currentX = $x;
+            $currentY += $itemHeight + $spacing;
+        } else {
+            $currentX += $itemWidth + $spacing;
+        }
+    }
+    
+    return $currentY + ($col > 0 ? $itemHeight + $spacing : 0);
+}
+
+/**
+ * Draw route trace grid - 3 columns for 9 routes
+ */
+function drawRouteGrid($image, $x, $y, $width, $data, $fontFile) {
+    $bgColor = imagecolorallocate($image, 255, 255, 255);
+    $textColor = imagecolorallocate($image, 33, 33, 33);
+    $textLight = imagecolorallocate($image, 97, 97, 97);
+    $borderColor = imagecolorallocate($image, 224, 224, 224);
+    $ctColor = imagecolorallocate($image, 66, 165, 245);   // China Telecom - Blue
+    $cuColor = imagecolorallocate($image, 102, 187, 106);  // China Unicom - Green
+    $cmColor = imagecolorallocate($image, 255, 167, 38);   // China Mobile - Orange
+    
+    $itemWidth = 370;
+    $itemHeight = 70;
+    $cols = 3;
+    $spacing = 15;
+    
+    $currentX = $x;
+    $currentY = $y;
+    $col = 0;
+    
+    foreach ($data as $routeLabel => $destination) {
+        // Determine color based on destination ISP
+        $accentColor = $borderColor;
+        if (stripos($destination, 'CT') !== false || stripos($destination, 'Telecom') !== false) {
+            $accentColor = $ctColor;
+        } elseif (stripos($destination, 'CU') !== false || stripos($destination, 'Unicom') !== false) {
+            $accentColor = $cuColor;
+        } elseif (stripos($destination, 'CM') !== false || stripos($destination, 'Mobile') !== false) {
+            $accentColor = $cmColor;
+        }
+        
+        // Draw card background
+        drawRoundedRect($image, $currentX, $currentY, $currentX + $itemWidth, $currentY + $itemHeight, 8, $bgColor, $borderColor);
+        
+        // Draw colored top bar
+        imagefilledrectangle($image, $currentX + 1, $currentY + 1, $currentX + $itemWidth - 1, $currentY + 5, $accentColor);
+        
+        // Draw route number and destination
+        if ($fontFile) {
+            imagettftext($image, 11, 0, $currentX + 15, $currentY + 28, $accentColor, $fontFile, $routeLabel);
+            // Wrap long destination text
+            $maxLen = 45;
+            if (strlen($destination) > $maxLen) {
+                $line1 = substr($destination, 0, $maxLen);
+                $line2 = substr($destination, $maxLen);
+                imagettftext($image, 9, 0, $currentX + 15, $currentY + 48, $textColor, $fontFile, $line1);
+                imagettftext($image, 9, 0, $currentX + 15, $currentY + 62, $textColor, $fontFile, $line2);
+            } else {
+                imagettftext($image, 9, 0, $currentX + 15, $currentY + 48, $textColor, $fontFile, $destination);
+            }
+        } else {
+            imagestring($image, 4, $currentX + 15, $currentY + 15, substr($routeLabel, 0, 15), $accentColor);
+            imagestring($image, 3, $currentX + 15, $currentY + 35, substr($destination, 0, 40), $textColor);
         }
         
         $col++;
@@ -815,6 +1009,11 @@ function drawInfoCard($image, $x, $y, $width, $height, $icon, $title, $value, $c
         imagettftext($image, 10, 0, $x + 15, $y + 65, $textLight, $fontFile, $title);
         // 数值
         imagettftext($image, 14, 0, $x + 15, $y + 90, $textColor, $fontFile, $value);
+    } else {
+        // 使用内置字体 fallback
+        imagestring($image, 5, $x + 15, $y + 15, $icon, $color);
+        imagestring($image, 3, $x + 15, $y + 40, $title, $textLight);
+        imagestring($image, 4, $x + 15, $y + 60, substr($value, 0, 25), $textColor);
     }
 }
 
