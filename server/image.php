@@ -328,18 +328,17 @@ function generateResultImage($data) {
     
     // 裁剪到实际高度
     $finalHeight = $currentY + 80;
-    $finalImage = new Imagick();
-    $finalImage->newImage($width, $finalHeight, new ImagickPixel('#F8F9FA'));
-    $finalImage->setImageFormat('png');
-    $finalImage->compositeImage($image, Imagick::COMPOSITE_OVER, 0, 0);
-    $image->destroy();
     
-    // 绘制底部
-    drawFooter($finalImage, $draw, $width, $finalHeight);
+    // 不创建新图像，直接裁剪现有图像
+    $image->cropImage($width, $finalHeight, 0, 0);
+    $image->setImagePage($width, $finalHeight, 0, 0);
+    
+    // 绘制底部（现在直接在$image上绘制）
+    drawFooter($image, $draw, $width, $finalHeight);
     
     // 输出
-    echo $finalImage->getImageBlob();
-    $finalImage->destroy();
+    echo $image->getImageBlob();
+    $image->destroy();
 }
 
 function drawHeader($image, $draw, $width, $timestamp) {
