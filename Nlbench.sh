@@ -427,14 +427,11 @@ run_script() {
         # 回程路由
         7)
             echo -e "运行${YELLOW}回程路由测试...${NC}"
-            if [ "$use_ipv6" = true ]; then
-            echo "使用IPv6测试选项"
-            wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh <<< "4" | tee "$temp_file"
-            else
-            echo "使用IPv4测试选项"
-            wget -N --no-check-certificate https://raw.githubusercontent.com/Chennhaoo/Shell_Bash/master/AutoTrace.sh && chmod +x AutoTrace.sh && bash AutoTrace.sh <<< "1" | tee "$temp_file"
-            fi
-            sed -i -e 's/\x1B\[[0-9;]*[JKmsu]//g' -e '/No:1\/9 Traceroute to/,$!d' -e '/测试项/,+9d' -e '/信息/d' -e '/^\s*$/d' "$temp_file"
+            # 使用新的backtrace脚本
+            curl https://raw.githubusercontent.com/zhanghanyun/backtrace/main/install.sh -sSf | sh | tee "$temp_file"
+            
+            # 清理输出，保留路由信息
+            sed -i -e 's/\x1B\[[0-9;]*[JKmsu]//g' "$temp_file"
             cp "$temp_file" "${output_file}_route"
             ;;
     esac
