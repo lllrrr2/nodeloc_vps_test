@@ -249,6 +249,7 @@ function generateResultImage($data) {
     
     // 创建draw对象
     $draw = new ImagickDraw();
+    $draw->setTextAntialias(true);  // 启用文本抗锯齿
     
     // 查找中文字体
     $fontFile = findChineseFont();
@@ -350,31 +351,17 @@ function drawHeader($image, $draw, $width, $timestamp) {
     $headerDraw->rectangle(0, 0, $width, $headerHeight);
     $image->drawImage($headerDraw);
     
-    // 设置字体用于文本
-    $fontFile = findChineseFont();
-    error_log("[drawHeader] Font file: " . ($fontFile ? $fontFile : 'NULL'));
-    
-    // 创建新的draw对象专门用于文本
-    $textDraw = new ImagickDraw();
-    if ($fontFile) {
-        try {
-            $textDraw->setFont($fontFile);
-            error_log("[drawHeader] Font set successfully");
-        } catch (Exception $e) {
-            error_log("[drawHeader] Font set failed: " . $e->getMessage());
-        }
-    }
-    
+    // 使用传入的$draw对象绘制文本（已经设置好字体和抗锯齿）
     // 标题
-    $textDraw->setFillColor('#FFFFFF');
-    $textDraw->setFontSize(24);
-    $image->annotateImage($textDraw, 75, 40, 0, "VPS 性能测试报告");
-    error_log("[drawHeader] Title drawn at (75, 40)");
+    $draw->setFillColor('#FFFFFF');
+    $draw->setFontSize(24);
+    $image->annotateImage($draw, 75, 40, 0, "VPS 性能测试报告");
+    error_log("[drawHeader] Title drawn with main draw object");
     
-    // 副标题 - 使用同一个textDraw对象
-    $textDraw->setFontSize(12);
-    $image->annotateImage($textDraw, 75, 65, 0, "生成时间: " . $timestamp);
-    error_log("[drawHeader] Subtitle drawn");
+    // 副标题
+    $draw->setFontSize(12);
+    $image->annotateImage($draw, 75, 65, 0, "生成时间: " . $timestamp);
+    error_log("[drawHeader] Subtitle drawn with main draw object");
     
     // 装饰圆圈
     $headerDraw->setFillColor('#FFA726');
@@ -390,6 +377,7 @@ function drawSection($image, $draw, $x, $y, $width, $title, $metrics, $type) {
     if ($fontFile) {
         $draw->setFont($fontFile);
     }
+    $draw->setTextAntialias(true);  // 确保抗锯齿启用
     
     // 绘制section标题
     $draw->setFillColor('#1A73E8');
