@@ -251,55 +251,55 @@ function generateResultImage($data) {
     
     // 绘制标题
     $currentY = drawHeader($image, $draw, $width, $data['timestamp']);
-    $currentY += 30;
+    $currentY += 20;  // 从30减到20
     
     // 1. YABS信息
     if (!empty($sections['YABS']['metrics'])) {
         $currentY = drawSection($image, $draw, $padding, $currentY, $width, 
                                 "📊 系统信息", $sections['YABS']['metrics'], 'info');
-        $currentY += 30;
+        $currentY += 20;  // 从30减到20
     }
     
     // 2. IP质量
     if (!empty($sections['IP质量']['metrics'])) {
         $currentY = drawSection($image, $draw, $padding, $currentY, $width,
                                 "🌐 IP质量", $sections['IP质量']['metrics'], 'info');
-        $currentY += 30;
+        $currentY += 20;  // 从30减到20
     }
     
     // 3. 流媒体
     if (!empty($sections['流媒体']['metrics'])) {
         $currentY = drawSection($image, $draw, $padding, $currentY, $width,
                                 "🎬 流媒体解锁", $sections['流媒体']['metrics'], 'grid');
-        $currentY += 30;
+        $currentY += 20;  // 从30减到20
     }
     
     // 4. 多线程测速
     if (!empty($sections['多线程测速']['metrics'])) {
         $currentY = drawSection($image, $draw, $padding, $currentY, $width,
                                 "🚀 多线程测速", $sections['多线程测速']['metrics'], 'bar');
-        $currentY += 30;
+        $currentY += 20;  // 从30减到20
     }
     
     // 5. 单线程测速
     if (!empty($sections['单线程测速']['metrics'])) {
         $currentY = drawSection($image, $draw, $padding, $currentY, $width,
                                 "📈 单线程测速", $sections['单线程测速']['metrics'], 'bar');
-        $currentY += 30;
+        $currentY += 20;  // 从30减到20
     }
     
     // 6. 响应测试
     if (!empty($sections['响应']['metrics'])) {
         $currentY = drawSection($image, $draw, $padding, $currentY, $width,
                                 "⚡ 响应测试", $sections['响应']['metrics'], 'list');
-        $currentY += 30;
+        $currentY += 20;  // 从30减到20
     }
     
     // 7. 回程路由
     if (!empty($sections['回程路由']['metrics'])) {
         $currentY = drawSection($image, $draw, $padding, $currentY, $width,
                                 "🔄 回程路由 (9条)", $sections['回程路由']['metrics'], 'routes');
-        $currentY += 30;
+        $currentY += 20;  // 从30减到20
     }
     
     // 裁剪到实际高度
@@ -319,7 +319,7 @@ function generateResultImage($data) {
 }
 
 function drawHeader($image, $draw, $width, $timestamp) {
-    $headerHeight = 120;
+    $headerHeight = 90;  // 从120减到90
     
     // 设置字体
     $fontFile = findChineseFont();
@@ -341,15 +341,15 @@ function drawHeader($image, $draw, $width, $timestamp) {
     
     // 标题
     $draw->setFillColor('#FFFFFF');
-    $draw->setFontSize(28);
+    $draw->setFontSize(24);  // 从28减到24
     $draw->setFontWeight(700);
-    $image->annotateImage($draw, 75, 50, 0, "NodeLoc VPS 性能测试报告");
+    $image->annotateImage($draw, 75, 40, 0, "NodeLoc VPS 性能测试报告");
     error_log("[drawHeader] Title drawn");
     
     // 副标题
-    $draw->setFontSize(14);
+    $draw->setFontSize(12);  // 从14减到12
     $draw->setFontWeight(400);
-    $image->annotateImage($draw, 75, 80, 0, "生成时间: " . $timestamp);
+    $image->annotateImage($draw, 75, 65, 0, "生成时间: " . $timestamp);
     error_log("[drawHeader] Subtitle drawn");
     
     // 装饰圆圈
@@ -369,11 +369,11 @@ function drawSection($image, $draw, $x, $y, $width, $title, $metrics, $type) {
     
     // 绘制section标题
     $draw->setFillColor('#1A73E8');
-    $draw->setFontSize(18);
+    $draw->setFontSize(16);  // 从18减到16
     $draw->setFontWeight(700);
-    $image->annotateImage($draw, $x, $y + 20, 0, $title);
+    $image->annotateImage($draw, $x, $y + 18, 0, $title);
     
-    $y += 40;
+    $y += 32;  // 从40减到32
     
     switch ($type) {
         case 'info':
@@ -393,8 +393,8 @@ function drawSection($image, $draw, $x, $y, $width, $title, $metrics, $type) {
 
 function drawInfoCards($image, $draw, $x, $y, $width, $metrics) {
     $cardWidth = 270;
-    $cardHeight = 100;
-    $spacing = 20;
+    $cardHeight = 85;  // 从100减到85
+    $spacing = 15;  // 从20减到15
     $col = 0;
     $currentX = $x;
     $currentY = $y;
@@ -415,14 +415,14 @@ function drawInfoCards($image, $draw, $x, $y, $width, $metrics) {
         
         // 标题
         $draw->setFillColor('#757575');
-        $draw->setFontSize(11);
-        $image->annotateImage($draw, $currentX + 15, $currentY + 35, 0, $key);
+        $draw->setFontSize(10);  // 从11减到10
+        $image->annotateImage($draw, $currentX + 15, $currentY + 30, 0, $key);
         
         // 数值 - 限制长度
         $displayValue = mb_strlen($value) > 30 ? mb_substr($value, 0, 27) . '...' : $value;
         $draw->setFillColor('#212121');
-        $draw->setFontSize(13);
-        $image->annotateImage($draw, $currentX + 15, $currentY + 65, 0, $displayValue);
+        $draw->setFontSize(12);  // 从13减到12
+        $image->annotateImage($draw, $currentX + 15, $currentY + 55, 0, $displayValue);
         
         $col++;
         if ($col >= 4) {
@@ -443,9 +443,9 @@ function drawInfoCards($image, $draw, $x, $y, $width, $metrics) {
 
 function drawStreamingGrid($image, $draw, $x, $y, $width, $metrics) {
     $itemWidth = 180;
-    $itemHeight = 50;
+    $itemHeight = 42;  // 从50减到42
     $cols = 3;
-    $spacing = 15;
+    $spacing = 12;  // 从15减到12
     $col = 0;
     $currentX = $x;
     $currentY = $y;
@@ -467,13 +467,13 @@ function drawStreamingGrid($image, $draw, $x, $y, $width, $metrics) {
         
         // 图标
         $draw->setFillColor($textColor);
-        $draw->setFontSize(20);
-        $image->annotateImage($draw, $currentX + 15, $currentY + 35, 0, $status);
+        $draw->setFontSize(18);  // 从20减到18
+        $image->annotateImage($draw, $currentX + 15, $currentY + 28, 0, $status);
         
         // 服务名
         $draw->setFillColor('#212121');
-        $draw->setFontSize(12);
-        $image->annotateImage($draw, $currentX + 50, $currentY + 35, 0, $service);
+        $draw->setFontSize(11);  // 从12减到11
+        $image->annotateImage($draw, $currentX + 50, $currentY + 28, 0, $service);
         
         $col++;
         if ($col >= $cols) {
@@ -493,8 +493,8 @@ function drawStreamingGrid($image, $draw, $x, $y, $width, $metrics) {
 }
 
 function drawBarChart($image, $draw, $x, $y, $width, $metrics) {
-    $barHeight = 35;
-    $spacing = 15;
+    $barHeight = 30;  // 从35减到30
+    $spacing = 12;  // 从15减到12
     $currentY = $y;
     
     // 找最大值
@@ -559,9 +559,9 @@ function drawList($image, $draw, $x, $y, $metrics) {
 
 function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
     $itemWidth = 370;
-    $itemHeight = 70;
+    $itemHeight = 60;  // 从70减到60
     $cols = 3;
-    $spacing = 15;
+    $spacing = 12;  // 从15减到12
     $col = 0;
     $currentX = $x;
     $currentY = $y;
@@ -588,22 +588,22 @@ function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
         
         // 路由编号
         $draw->setFillColor($color);
-        $draw->setFontSize(12);
+        $draw->setFontSize(11);  // 从12减到11
         $draw->setFontWeight(700);
-        $image->annotateImage($draw, $currentX + 15, $currentY + 28, 0, $label);
+        $image->annotateImage($draw, $currentX + 15, $currentY + 25, 0, $label);
         
         // 目的地 - 自动换行
         $draw->setFillColor('#212121');
-        $draw->setFontSize(10);
+        $draw->setFontSize(9);  // 从10减到9
         $draw->setFontWeight(400);
         $maxLen = 48;
         if (mb_strlen($destination) > $maxLen) {
             $line1 = mb_substr($destination, 0, $maxLen);
             $line2 = mb_substr($destination, $maxLen);
-            $image->annotateImage($draw, $currentX + 15, $currentY + 48, 0, $line1);
-            $image->annotateImage($draw, $currentX + 15, $currentY + 62, 0, $line2);
+            $image->annotateImage($draw, $currentX + 15, $currentY + 42, 0, $line1);
+            $image->annotateImage($draw, $currentX + 15, $currentY + 54, 0, $line2);
         } else {
-            $image->annotateImage($draw, $currentX + 15, $currentY + 48, 0, $destination);
+            $image->annotateImage($draw, $currentX + 15, $currentY + 42, 0, $destination);
         }
         
         $col++;
@@ -624,7 +624,7 @@ function drawRouteGrid($image, $draw, $x, $y, $width, $metrics) {
 }
 
 function drawFooter($image, $draw, $width, $height) {
-    $footerY = $height - 50;
+    $footerY = $height - 40;  // 从50减到40
     
     // 设置字体
     $fontFile = findChineseFont();
@@ -640,9 +640,9 @@ function drawFooter($image, $draw, $width, $height) {
     
     // 水印
     $draw->setFillColor('#FFFFFF');
-    $draw->setFontSize(11);
-    $image->annotateImage($draw, 25, $footerY + 30, 0, "Powered by bench.nodeloc.cc");
-    $image->annotateImage($draw, $width - 150, $footerY + 30, 0, "NodeLoc.com");
+    $draw->setFontSize(10);  // 从11减到10
+    $image->annotateImage($draw, 25, $footerY + 25, 0, "Powered by bench.nodeloc.cc");
+    $image->annotateImage($draw, $width - 150, $footerY + 25, 0, "NodeLoc.com");
 }
 
 function findChineseFont() {
