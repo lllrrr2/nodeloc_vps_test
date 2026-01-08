@@ -362,14 +362,23 @@ function drawHeader($image, $draw, $width, $timestamp) {
     $headerDraw->rectangle(0, 0, $width, $headerHeight);
     $image->drawImage($headerDraw);
     
+    // 确保字体已设置
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
+    
     // 标题
     $draw->setFillColor('#FFFFFF');
     $draw->setFontSize(24);  // 从28减到24
     $draw->setFontWeight(700);
-    $image->annotateImage($draw, 75, 40, 0, "NodeLoc VPS 性能测试报告");
-    error_log("[drawHeader] Title drawn");
+    $image->annotateImage($draw, 75, 40, 0, "VPS 性能测试报告");
+    error_log("[drawHeader] Title drawn at (75, 40)");
     
-    // 副标题
+    // 副标题 - 重新设置字体
+    if ($fontFile) {
+        $draw->setFont($fontFile);
+    }
+    $draw->setFillColor('#FFFFFF');
     $draw->setFontSize(12);  // 从14减到12
     $draw->setFontWeight(400);
     $image->annotateImage($draw, 75, 65, 0, "生成时间: " . $timestamp);
