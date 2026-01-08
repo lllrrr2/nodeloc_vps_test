@@ -352,15 +352,15 @@ function drawHeader($image, $draw, $width, $timestamp) {
     $image->drawImage($headerDraw);
     
     // 使用传入的$draw对象绘制文本（已经设置好字体和抗锯齿）
-    // 标题
+    // 标题 - 改用英文测试
     $draw->setFillColor('#FFFFFF');
     $draw->setFontSize(24);
-    $image->annotateImage($draw, 75, 40, 0, "VPS 性能测试报告");
+    $image->annotateImage($draw, 75, 40, 0, "VPS Performance Test Report");
     error_log("[drawHeader] Title drawn with main draw object");
     
     // 副标题
     $draw->setFontSize(12);
-    $image->annotateImage($draw, 75, 65, 0, "生成时间: " . $timestamp);
+    $image->annotateImage($draw, 75, 65, 0, "Generated: " . $timestamp);
     error_log("[drawHeader] Subtitle drawn with main draw object");
     
     // 装饰圆圈
