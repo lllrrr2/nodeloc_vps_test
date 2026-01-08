@@ -66,6 +66,37 @@ sudo yum install php-gd php-mbstring
 ```
 
 ### 字体支持（可选但推荐）
+
+#### 如果服务器有 open_basedir 限制（如宝塔面板）
+
+使用提供的脚本自动安装：
+
+```bash
+cd /www/wwwroot/bench.nodeloc.cc
+chmod +x install_fonts.sh
+./install_fonts.sh
+```
+
+或手动安装：
+
+```bash
+# 方法1: 复制系统字体（如果已安装）
+mkdir -p /www/wwwroot/bench.nodeloc.cc/fonts
+cp /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf \
+   /www/wwwroot/bench.nodeloc.cc/fonts/
+chmod 644 /www/wwwroot/bench.nodeloc.cc/fonts/DejaVuSans.ttf
+
+# 方法2: 直接下载字体
+mkdir -p /www/wwwroot/bench.nodeloc.cc/fonts
+wget -O /www/wwwroot/bench.nodeloc.cc/fonts/DejaVuSans.ttf \
+  https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf
+chmod 644 /www/wwwroot/bench.nodeloc.cc/fonts/DejaVuSans.ttf
+```
+
+#### 如果没有 open_basedir 限制
+
+安装系统字体：
+
 ```bash
 # Ubuntu/Debian
 sudo apt-get install fonts-dejavu-core

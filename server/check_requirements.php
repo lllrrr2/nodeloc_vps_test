@@ -193,18 +193,42 @@ CentOS/RHEL: sudo yum install php-gd
             
             // 4. 字体文件检查
             $fontPaths = [
-                '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-                '/usr/share/fonts/dejavu/DejaVuSans.ttf',
-                '/usr/share/fonts/truetype/dejavu-sans/DejaVuSans.ttf'
+                __DIR__ . '/fonts/DejaVuSans.ttf',
+                __DIR__ . '/DejaVuSans.ttf',
             ];
+            
+            // 只有在没有 open_basedir 限制时才检查系统字体
+            $openBasedir = ini_get('open_basedir');
+            if (!$openBasedir) {
+                $fontPaths = array_merge($fontPaths, [
+                    '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+                    '/usr/share/fonts/dejavu/DejaVuSans.ttf',
+                    '/usr/share/fonts/truetype/dejavu-sans/DejaVuSans.ttf'
+                ]);
+            }
+            
             $fontFound = false;
             $fontPath = '';
             foreach ($fontPaths as $path) {
-                if (file_exists($path)) {
+                if (@file_exists($path)) {
                     $fontFound = true;
                     $fontPath = $path;
                     break;
                 }
+            }
+            
+            $fontInstallCmd = '';
+            if ($openBasedir) {
+                $fontInstallCmd = '由于 open_basedir 限制，请运行安装脚本:
+chmod +x install_fonts.sh && ./install_fonts.sh
+
+或手动下载到本地:
+mkdir -p ' . __DIR__ . '/fonts
+wget -O ' . __DIR__ . '/fonts/DejaVuSans.ttf \\
+  https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf';
+            } else {
+                $fontInstallCmd = 'Ubuntu/Debian: sudo apt-get install fonts-dejavu-core
+CentOS/RHEL: sudo yum install dejavu-sans-fonts';
             }
             
             $checks[] = [
@@ -212,10 +236,29 @@ CentOS/RHEL: sudo yum install php-gd
                 'status' => $fontFound ? 'success' : 'warning',
                 'message' => $fontFound ? "已找到: {$fontPath}" : '未找到',
                 'description' => $fontFound ? '可以正常渲染中文字体' : '将使用 GD 内置字体（中文显示效果较差）',
-                'install' => !$fontFound ? 'Ubuntu/Debian: sudo apt-get install fonts-dejavu-core
-CentOS/RHEL: sudo yum install dejavu-sans-fonts' : ''
+                'install' => !$fontFound ? $fontInstallCmd : ''
             ];
             if (!$fontFound) $warnings++;
+            
+            // open_basedir 检查
+            if ($openBasedir) {
+                $checks[] = [
+                    'title' => 'open_basedir 限制',
+                    'status' => 'warning',
+                    'message' => '已启用',
+                    'description' => "允许路径: {$openBasedir}",
+                    'install' => '字体文件需要放在允许的路径内，请使用 install_fonts.sh 脚本'
+                ];
+                $warnings++;
+            } else {
+                $checks[] = [
+                    'title' => 'open_basedir 限制',
+                    'status' => 'success',
+                    'message' => '未启用',
+                    'description' => '可以访问系统字体目录',
+                    'install' => ''
+                ];
+            }
             
             // 5. mbstring 扩展检查
             $mbstringLoaded = extension_loaded('mbstring');

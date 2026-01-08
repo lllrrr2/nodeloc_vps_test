@@ -82,12 +82,66 @@ https://bench.nodeloc.cc/image.php?file=NL1736320123-ABC123.txt&year=2026&month=
 
 ## 字体支持
 
-图片生成器会尝试使用以下字体：
-- `/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf`
+图片生成器会尝试使用以下字体路径（按优先级）：
+1. `./fonts/DejaVuSans.ttf` （本地字体目录，推荐）
+2. `./DejaVuSans.ttf` （当前目录）
+3. `/www/wwwroot/bench.nodeloc.cc/fonts/DejaVuSans.ttf` （网站字体目录）
+4. `/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf` （系统字体，仅当没有 open_basedir 限制时）
 
 如果字体文件不存在，会自动降级使用 GD 内置字体。
 
-### 安装字体（可选）
+### 安装字体
+
+#### 方法 1：使用自动安装脚本（推荐）
+
+```bash
+cd /path/to/server
+chmod +x install_fonts.sh
+./install_fonts.sh
+```
+
+脚本会自动：
+- 查找系统字体文件
+- 复制到 `fonts/` 目录
+- 或提示下载字体
+
+#### 方法 2：手动复制系统字体
+
+如果服务器有 `open_basedir` 限制，需要将字体复制到允许的目录：
+
+```bash
+# 创建字体目录
+mkdir -p /www/wwwroot/bench.nodeloc.cc/fonts
+
+# 复制字体（如果已安装）
+cp /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf \
+   /www/wwwroot/bench.nodeloc.cc/fonts/
+
+# 设置权限
+chmod 644 /www/wwwroot/bench.nodeloc.cc/fonts/DejaVuSans.ttf
+```
+
+#### 方法 3：手动下载字体
+
+如果系统没有安装字体：
+
+```bash
+# 创建字体目录
+mkdir -p /www/wwwroot/bench.nodeloc.cc/fonts
+
+# 下载字体文件
+wget -O /www/wwwroot/bench.nodeloc.cc/fonts/DejaVuSans.ttf \
+  https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf
+
+# 或使用 curl
+curl -L -o /www/wwwroot/bench.nodeloc.cc/fonts/DejaVuSans.ttf \
+  https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf
+
+# 设置权限
+chmod 644 /www/wwwroot/bench.nodeloc.cc/fonts/DejaVuSans.ttf
+```
+
+### 系统字体安装（仅当没有 open_basedir 限制时）
 
 在 Ubuntu/Debian 系统上：
 ```bash

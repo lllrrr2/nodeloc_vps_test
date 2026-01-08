@@ -19,7 +19,8 @@ if (!extension_loaded('gd')) {
         "然后重启Web服务器: sudo systemctl restart apache2 或 nginx");
 }
 
-// 设置内容类型为PNG图片
+// 设置字符编码和内容类型
+mb_internal_encoding('UTF-8');
 header('Content-Type: image/png');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 
@@ -55,6 +56,43 @@ $data = parseTestResults($content);
 
 // 生成图片
 generateResultImage($data);
+
+/**
+ * 翻译Section名称为英文
+ */
+function translateSectionName($name) {
+    $translations = [
+        'YABS' => 'YABS Benchmark',
+        'IP质量' => 'IP Quality Check',
+        '流媒体' => 'Streaming Services',
+        '响应' => 'Response Test',
+        '多线程测速' => 'Multi-thread Speed Test',
+        '单线程测速' => 'Single-thread Speed Test',
+        '回程路由' => 'Route Trace Back',
+    ];
+    return $translations[$name] ?? $name;
+}
+
+/**
+ * 翻译指标键为英文
+ */
+function translateMetricKey($key) {
+    $translations = [
+        'CPU' => 'CPU Model',
+        '内存' => 'Memory',
+        '磁盘' => 'Disk',
+        '磁盘速度' => 'Disk Speed',
+        'IP类型' => 'IP Type',
+        '黑名单' => 'Blacklist Status',
+        '平均下载' => 'Avg Download Speed',
+        '平均上传' => 'Avg Upload Speed',
+        '平均延迟' => 'Avg Latency',
+        '解锁' => 'Unlocked',
+        '失败' => 'Failed',
+        '成功' => 'Success',
+    ];
+    return $translations[$key] ?? $key;
+}
 
 /**
  * 解析测试结果
@@ -220,10 +258,11 @@ function parseResponse($content) {
  */
 function generateResultImage($data) {
     // 图片尺寸
-    $width = 800;
-    $headerHeight = 80;
-    $sectionHeight = 40;
-    $metricsLineHeight = 30;
+    $width = 850;
+    $headerHeight = 100;
+    $sectionHeight = 45;
+    $metricsLineHeight = 32;
+    $padding = 20;
     
     // 计算总高度
     $totalMetrics = 0;
@@ -234,92 +273,138 @@ function generateResultImage($data) {
     }
     
     $sectionsCount = count($data['sections']);
-    $height = $headerHeight + ($sectionsCount * $sectionHeight) + ($totalMetrics * $metricsLineHeight) + 60;
+    $height = $headerHeight + ($sectionsCount * ($sectionHeight + 10)) + ($totalMetrics * $metricsLineHeight) + 80;
     
     // 创建图片
     $image = imagecreatetruecolor($width, $height);
     
-    // 定义颜色
-    $bgColor = imagecolorallocate($image, 255, 255, 255);
-    $headerBg = imagecolorallocate($image, 13, 71, 161);
-    $sectionBg = imagecolorallocate($image, 187, 222, 251);
-    $textColor = imagecolorallocate($image, 33, 33, 33);
+    // 定义现代化配色方案
+    $bgColor = imagecolorallocate($image, 248, 249, 250);           // 浅灰背景
+    $headerBg = imagecolorallocate($image, 26, 115, 232);           // 现代蓝色
+    $headerBgDark = imagecolorallocate($image, 13, 71, 161);        // 深蓝
+    $sectionBg = imagecolorallocate($image, 227, 242, 253);         // 浅蓝色
+    $sectionBorder = imagecolorallocate($image, 144, 202, 249);     // 蓝色边框
+    $textColor = imagecolorallocate($image, 33, 33, 33);            // 深灰文字
+    $textLight = imagecolorallocate($image, 97, 97, 97);            // 浅灰文字
     $whiteColor = imagecolorallocate($image, 255, 255, 255);
-    $borderColor = imagecolorallocate($image, 200, 200, 200);
-    $successColor = imagecolorallocate($image, 76, 175, 80);
-    $failColor = imagecolorallocate($image, 244, 67, 54);
+    $successColor = imagecolorallocate($image, 56, 142, 60);        // 成功绿
+    $failColor = imagecolorallocate($image, 211, 47, 47);           // 失败红
+    $accentColor = imagecolorallocate($image, 255, 167, 38);        // 强调橙
     
     // 填充背景
     imagefilledrectangle($image, 0, 0, $width, $height, $bgColor);
     
-    // 设置字体路径（使用GD库的内置字体）
-    $fontFile = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
-    $fontExists = file_exists($fontFile);
+    // 查找字体
+    $fontPaths = [
+        __DIR__ . '/fonts/DejaVuSans.ttf',
+        __DIR__ . '/DejaVuSans.ttf',
+        '/www/wwwroot/bench.nodeloc.cc/fonts/DejaVuSans.ttf',
+    ];
     
-    // 绘制标题区域
+    if (!ini_get('open_basedir')) {
+        $fontPaths = array_merge($fontPaths, [
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+            '/usr/share/fonts/dejavu/DejaVuSans.ttf',
+        ]);
+    }
+    
+    $fontFile = null;
+    $fontExists = false;
+    foreach ($fontPaths as $path) {
+        if (@file_exists($path)) {
+            $fontFile = $path;
+            $fontExists = true;
+            break;
+        }
+    }
+    
+    // 绘制现代化标题区域（渐变效果通过两层矩形模拟）
     imagefilledrectangle($image, 0, 0, $width, $headerHeight, $headerBg);
+    imagefilledrectangle($image, 0, $headerHeight - 20, $width, $headerHeight, $headerBgDark);
     
-    $title = "NodeLoc VPS 测试报告";
-    $subtitle = "生成时间: " . $data['timestamp'];
+    // 标题文本（全英文）
+    $title = "NodeLoc VPS Benchmark Report";
+    $subtitle = "Generated: " . $data['timestamp'];
     
     if ($fontExists) {
-        imagettftext($image, 20, 0, 20, 35, $whiteColor, $fontFile, $title);
-        imagettftext($image, 12, 0, 20, 60, $whiteColor, $fontFile, $subtitle);
+        // 标题
+        imagettftext($image, 24, 0, $padding, 40, $whiteColor, $fontFile, $title);
+        // 副标题
+        imagettftext($image, 12, 0, $padding, 65, $whiteColor, $fontFile, $subtitle);
+        // 装饰线
+        imagefilledrectangle($image, $padding, 75, $padding + 150, 78, $accentColor);
     } else {
-        imagestring($image, 5, 20, 20, $title, $whiteColor);
-        imagestring($image, 3, 20, 50, $subtitle, $whiteColor);
+        imagestring($image, 5, $padding, 25, $title, $whiteColor);
+        imagestring($image, 3, $padding, 55, $subtitle, $whiteColor);
     }
     
     // 绘制测试结果
-    $currentY = $headerHeight + 20;
+    $currentY = $headerHeight + 25;
     
     foreach ($data['sections'] as $sectionName => $section) {
         if (empty($section['metrics'])) {
             continue;
         }
         
-        // 绘制section标题
-        imagefilledrectangle($image, 10, $currentY, $width - 10, $currentY + $sectionHeight, $sectionBg);
-        imagerectangle($image, 10, $currentY, $width - 10, $currentY + $sectionHeight, $borderColor);
+        // 翻译section名称为英文
+        $sectionNameEn = translateSectionName($sectionName);
+        
+        // 绘制section标题（圆角效果）
+        drawRoundedRect($image, $padding, $currentY, $width - $padding, $currentY + $sectionHeight, 8, $sectionBg, $sectionBorder);
         
         if ($fontExists) {
-            imagettftext($image, 14, 0, 20, $currentY + 27, $textColor, $fontFile, $sectionName);
+            imagettftext($image, 15, 0, $padding + 15, $currentY + 30, $headerBg, $fontFile, $sectionNameEn);
         } else {
-            imagestring($image, 4, 20, $currentY + 12, $sectionName, $textColor);
+            imagestring($image, 4, $padding + 15, $currentY + 15, $sectionNameEn, $headerBg);
         }
         
-        $currentY += $sectionHeight + 5;
+        $currentY += $sectionHeight + 10;
         
-        // 绘制metrics
+        // 绘制metrics（全英文）
         foreach ($section['metrics'] as $key => $value) {
-            $text = "{$key}: {$value}";
+            $keyEn = translateMetricKey($key);
+            $text = "{$keyEn}: {$value}";
             
-            // 根据内容选择颜色
+            // 根据内容选择颜色和图标
             $color = $textColor;
+            $icon = "  ";
             if ($value === '✓') {
                 $color = $successColor;
+                $icon = "✓ ";
+                $text = "{$icon}{$keyEn}";
             } elseif ($value === '✗') {
                 $color = $failColor;
+                $icon = "✗ ";
+                $text = "{$icon}{$keyEn}";
             }
             
+            // 绘制项目符号
             if ($fontExists) {
-                imagettftext($image, 11, 0, 30, $currentY + 20, $color, $fontFile, $text);
+                imagefilledellipse($image, $padding + 25, $currentY + 12, 6, 6, $color);
+                imagettftext($image, 12, 0, $padding + 35, $currentY + 18, $textColor, $fontFile, $text);
             } else {
-                imagestring($image, 3, 30, $currentY + 8, $text, $color);
+                imagestring($image, 3, $padding + 20, $currentY + 5, "* " . $text, $color);
             }
             
             $currentY += $metricsLineHeight;
         }
         
-        $currentY += 10;
+        $currentY += 15;
     }
     
-    // 添加水印
-    $watermark = "Generated by bench.nodeloc.cc";
+    // 添加现代化底部区域
+    $footerY = $height - 40;
+    imagefilledrectangle($image, 0, $footerY, $width, $height, $headerBgDark);
+    
+    // 水印和版权信息
+    $watermark = "Powered by bench.nodeloc.cc";
     if ($fontExists) {
-        imagettftext($image, 10, 0, $width - 220, $height - 15, $borderColor, $fontFile, $watermark);
+        imagettftext($image, 10, 0, $padding, $footerY + 25, $whiteColor, $fontFile, $watermark);
+        // 右侧添加小图标
+        imagettftext($image, 9, 0, $width - 150, $footerY + 25, $whiteColor, $fontFile, "NodeLoc.com");
     } else {
-        imagestring($image, 2, $width - 220, $height - 20, $watermark, $borderColor);
+        imagestring($image, 2, $padding, $footerY + 15, $watermark, $whiteColor);
+        imagestring($image, 2, $width - 120, $footerY + 15, "NodeLoc.com", $whiteColor);
     }
     
     // 输出图片
@@ -328,28 +413,95 @@ function generateResultImage($data) {
 }
 
 /**
+ * 绘制圆角矩形
+ */
+function drawRoundedRect($image, $x1, $y1, $x2, $y2, $radius, $fillColor, $borderColor) {
+    // 填充主体
+    imagefilledrectangle($image, $x1 + $radius, $y1, $x2 - $radius, $y2, $fillColor);
+    imagefilledrectangle($image, $x1, $y1 + $radius, $x2, $y2 - $radius, $fillColor);
+    
+    // 四个角（圆角效果）
+    imagefilledellipse($image, $x1 + $radius, $y1 + $radius, $radius * 2, $radius * 2, $fillColor);
+    imagefilledellipse($image, $x2 - $radius, $y1 + $radius, $radius * 2, $radius * 2, $fillColor);
+    imagefilledellipse($image, $x1 + $radius, $y2 - $radius, $radius * 2, $radius * 2, $fillColor);
+    imagefilledellipse($image, $x2 - $radius, $y2 - $radius, $radius * 2, $radius * 2, $fillColor);
+    
+    // 边框
+    imagerectangle($image, $x1, $y1 + $radius, $x1, $y2 - $radius, $borderColor);
+    imagerectangle($image, $x2, $y1 + $radius, $x2, $y2 - $radius, $borderColor);
+    imagerectangle($image, $x1 + $radius, $y1, $x2 - $radius, $y1, $borderColor);
+    imagerectangle($image, $x1 + $radius, $y2, $x2 - $radius, $y2, $borderColor);
+}
+
+/**
  * 生成错误图片
  */
 function generateErrorImage($message) {
-    $width = 600;
-    $height = 200;
+    $width = 650;
+    $height = 250;
     
     $image = imagecreatetruecolor($width, $height);
-    $bgColor = imagecolorallocate($image, 255, 255, 255);
-    $textColor = imagecolorallocate($image, 244, 67, 54);
-    $borderColor = imagecolorallocate($image, 200, 200, 200);
+    $bgColor = imagecolorallocate($image, 248, 249, 250);
+    $errorBg = imagecolorallocate($image, 255, 235, 238);
+    $textColor = imagecolorallocate($image, 211, 47, 47);
+    $borderColor = imagecolorallocate($image, 239, 154, 154);
+    $darkText = imagecolorallocate($image, 33, 33, 33);
     
     imagefilledrectangle($image, 0, 0, $width, $height, $bgColor);
-    imagerectangle($image, 0, 0, $width - 1, $height - 1, $borderColor);
     
-    $fontFile = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
+    // 错误框
+    drawRoundedRect($image, 20, 40, $width - 20, $height - 40, 10, $errorBg, $borderColor);
     
-    if (file_exists($fontFile)) {
-        imagettftext($image, 16, 0, 50, 100, $textColor, $fontFile, $message);
+    // 查找字体文件
+    $fontPaths = [
+        __DIR__ . '/fonts/DejaVuSans.ttf',
+        __DIR__ . '/DejaVuSans.ttf',
+        '/www/wwwroot/bench.nodeloc.cc/fonts/DejaVuSans.ttf',
+    ];
+    
+    $fontFile = null;
+    foreach ($fontPaths as $path) {
+        if (@file_exists($path)) {
+            $fontFile = $path;
+            break;
+        }
+    }
+    
+    // 翻译错误消息为英文
+    $messageEn = translateErrorMessage($message);
+    
+    if ($fontFile) {
+        // 错误图标
+        imagettftext($image, 32, 0, 40, 110, $textColor, $fontFile, "⚠");
+        // 错误消息
+        imagettftext($image, 18, 0, 90, 110, $textColor, $fontFile, $messageEn);
+        // 提示信息
+        imagettftext($image, 11, 0, 90, 140, $darkText, $fontFile, "Please check your request and try again");
     } else {
-        imagestring($image, 5, 50, 90, $message, $textColor);
+        imagestring($image, 5, 40, 90, "ERROR:", $textColor);
+        imagestring($image, 4, 40, 120, $messageEn, $darkText);
+        imagestring($image, 3, 40, 150, "Please check your request", $darkText);
     }
     
     imagepng($image);
     imagedestroy($image);
+}
+
+/**
+ * 翻译错误消息为英文
+ */
+function translateErrorMessage($message) {
+    $translations = [
+        '错误: 未指定文件' => 'Error: No file specified',
+        '错误: 文件不存在' => 'Error: File not found',
+        '错误: 无法读取文件' => 'Error: Cannot read file',
+    ];
+    
+    foreach ($translations as $cn => $en) {
+        if (strpos($message, $cn) !== false) {
+            return $en;
+        }
+    }
+    
+    return $message;
 }
