@@ -1,494 +1,467 @@
 <!DOCTYPE html>
-<html lang="zh">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>测试结果页面</title>
-  </head>
-  <body>
-    <div class="loading">
-      正在加载文件
-    </div>
-    <div class="tabs"></div>
-    <button class="copy-btn" data-clipboard-target="#copy-target">
-      复制论坛代码/Copy BBCode
-    </button>
-    <textarea id="copy-target"></textarea>
-    <style>
-      html {
-        --body-bg: #fff;
-        --muted-color: #546e7a;
-        --border-radius: 5px;
-        --primary-color: #0d47a1;
-        --control-bg: #bbdefb;
-      }
-      html,
-      body {
-        height: 100%;
-        width: 100%;
-        padding: 0;
-        margin: 0;
-        overflow: hidden;
-      }
-      .copy-btn {
-        padding: 7px;
-        border-radius: var(--border-radius);
-        background: #0d47a1;
-        color: #fff;
-        vertical-align: bottom;
-        outline: 0;
-        border: unset;
-        box-shadow: 1px 1px 2px black;
-        cursor: pointer;
-        position: fixed;
-        left: 5px;
-        bottom: 5px;
-      }
-      .copy-btn:active {
-        box-shadow: 1px 1px 2px black inset;
-      }
-      #copy-target {
-        margin-top: 50px;
-        z-index: -1;
-        display: none;
-      }
-
-      .loading,
-      .error {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 100px;
-        text-align: center;
-        font-size: large;
-        z-index: 999;
-      }
-      .error {
-        background-color: #ffcdd2;
-      }
-      .loading {
-        background-color: #e3f2fd;
-      }
-    </style>
-    <style>
-      .tabs {
-        position: relative;
-        clear: both;
-        padding-top: 44px;
-        white-space: nowrap;
-        overflow: auto;
-        height: 28px;
-            max-width: 1000px;
-    margin: 0 auto;
-      }
-      .tabs .tab {
-        display: inline-block;
-      }
-      .tabs .tab:first-of-type label {
-        border-top-left-radius: var(--border-radius);
-      }
-      .tabs .tab:last-of-type label {
-        border-top-right-radius: var(--border-radius);
-      }
-      .tabs .tab label {
-        background: var(--body-bg);
-        padding: 10px 10px 7px;
-        border: 1px solid var(--muted-color);
-        margin-left: -1px;
-        position: relative;
-        left: 1px;
-      }
-      .tabs .tab [type="radio"] {
-        display: none;
-      }
-      .tabs .content-tab {
-        display: none;
-        position: fixed;
-        top: 72px;
-        left: 0;
-        background: var(--body-bg);
-        right: 0;
-        bottom: 100px;
-        padding: 10px 20px;
-        border: 1px solid var(--muted-color);
-        border-radius: 0 var(--border-radius) var(--border-radius)
-          var(--border-radius);
-        overflow-y: auto;
-            max-width: 1000px;
-    margin: 0 auto;
-      }
-      .tabs [type="radio"]:checked ~ label {
-        background: var(--control-bg);
-        border-bottom: 3px solid var(--primary-color);
-      }
-      .tabs [type="radio"]:checked ~ label ~ .content-tab {
-        display: block;
-      }
-    </style>
-    <script src="https://fastly.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-    <script src="https://fastly.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
-    <script src="https://fastly.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script>
-    <script>
-      function getFilePath(fileName) {
-        // 从 URL 中提取路径部分
-        const urlSegments = location.pathname.split('/');
-        
-        // 动态获取年份和月份
-        const year = urlSegments[2]; // 第二部分为年份
-        const month = urlSegments[3]; // 第三部分为月份
-        
-        // 构造文件路径
-        return `/${year}/${month}/${fileName}`;
-      }
-
-        const fileNameMatch =
-          new URLSearchParams(window.location.search).get("filename") ||
-          location.pathname.split("/").pop();
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NodeLoc VPS Benchmark Results</title>
     
-        if (fileNameMatch) {
-          const fileName = decodeURIComponent(fileNameMatch);
-          const filePath = getFilePath(fileName);
-          console.log(filePath);
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     
-          $.ajax({
-            url: filePath,
-            success: render
-          });
+    <style>
+        :root {
+            --primary-orange: #ff6b35;
+            --primary-dark: #e55525;
         }
 
-      function render(data) {
-        $("#copy-target").val(data);
-        $(".loading").remove();
-        $(".tabs").append(
-          $("<div>")
-            .addClass("tab")
-            .append(
-              $("<input>")
-                .attr("type", "radio")
-                .attr("id", `taball`)
-                .attr("name", "tabs")
-                .attr("checked", "checked")
-            )
-            .append($("<label>").attr("for", `taball`).text("全部/All"))
-            .append(
-              $("<div>")
-                .addClass("content-tab")
-                .append(
-                  $("<code>")
-                    .addClass("language-bbcode")
-                    .append($("<pre>").text(data))
-                )
-            )
-        );
-        const tags = Array.from(
-          data.matchAll(/\[TAB=([^\]]*)\]([^]*?)\[\/tab\]/gi)
-        );
-
-        tags.forEach((tagMatching, i) => {
-          if (tagMatching[1] && tagMatching[2]) {
-            const tab = $("<div>")
-              .addClass("tab")
-              .append(
-                $("<input>")
-                  .attr("type", "radio")
-                  .attr("id", `tab-${i}`)
-                  .attr("name", "tabs")
-              )
-              .append(
-                $("<label>").attr("for", `tab-${i}`).text(tagMatching[1])
-              );
-
-            const codeContentMatching = /```([^\s]*?)([^]*)```/.exec(
-              tagMatching[2]
-            );
-            const contentEl = $("<div>").addClass("content-tab");
-            if (codeContentMatching) {
-              const code = $("<code>").append(
-                $("<pre>").text(codeContentMatching[2])
-              );
-              if (codeContentMatching[1]) {
-                contentEl.addClass("language-" + codeContentMatching[1]);
-              }
-              contentEl.append(code);
-            } else {
-              contentEl.text(tagMatching[2]);
-            }
-
-            tab.append(contentEl);
-            $(".tabs").append(tab);
-          }
-        });
-        hljs.highlightAll();
-        new ClipboardJS(".copy-btn");
-      }
-
-      function fail() {
-        $(".loading").attr("class", "error").text("无法加载数据文件，请检查URL");
-      }
-    </script>
-  </body>
-</html>
-<!DOCTYPE html>
-<html lang="zh">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>测试结果页面</title>
-  </head>
-  <body>
-    <div class="loading">
-      正在加载文件
-    </div>
-    <div class="tabs"></div>
-    <div class="footer">
-        <button class="copy-btn" data-clipboard-target="#copy-target">
-          复制代码 / Copy
-        </button>
-        <button class="link-btn" id="visit-forum">
-          访问论坛 / Visit forum
-        </button>
-    </div>
-    <textarea id="copy-target"></textarea>
-    <style>
-      html {
-        --body-bg: #fff;
-        --muted-color: #546e7a;
-        --border-radius: 5px;
-        --primary-color: #0d47a1;
-        --control-bg: #bbdefb;
-      }
-      html,
-      body {
-        height: 100%;
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        background: url('https://s.rmimg.com/2025/01/21/b5af503d48d3cacdddd5089dabe4a76c.jpg') no-repeat center center fixed;
-        background-size: cover;
-        font-family: Arial, sans-serif;
-        overflow: hidden;
-      }
-      .copy-btn {
-        padding: 7px;
-        border-radius: var(--border-radius);
-        background: #0d47a1;
-        color: #fff;
-        vertical-align: bottom;
-        outline: 0;
-        border: unset;
-        box-shadow: 1px 1px 2px black;
-        cursor: pointer;
-      }
-      .link-btn {
-        padding: 7px;
-        border-radius: var(--border-radius);
-        background: #0da148;
-        color: #fff;
-        vertical-align: bottom;
-        outline: 0;
-        border: unset;
-        box-shadow: 1px 1px 2px black;
-        cursor: pointer;
-      }
-      .copy-btn:active {
-        box-shadow: 1px 1px 2px black inset;
-      }
-      #copy-target {
-        margin-top: 50px;
-        z-index: -1;
-        width: 0px;
-        height: 0px;
-      }
-
-      .loading,
-      .error {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 100px;
-        text-align: center;
-        font-size: large;
-        z-index: 999;
-      }
-      .error {
-        background-color: #ffcdd2;
-      }
-      .loading {
-        background-color: #e3f2fd;
-      }
-    </style>
-    <style>
-    .footer{
-        position: fixed;
-        bottom: 50px;
-        width: 1000px;
-        max-width: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        clear: both;
-    }
-      .tabs {
-        position: relative;
-        clear: both;
-        padding-top: 44px;
-        white-space: nowrap;
-        height: 28px;
-            max-width: 1041px;
-    margin: 0 auto;
-      }
-      .tabs .tab {
-        display: inline-block;
-      }
-      .tabs .tab:first-of-type label {
-        border-top-left-radius: var(--border-radius);
-      }
-      .tabs .tab:last-of-type label {
-        border-top-right-radius: var(--border-radius);
-      }
-      .tabs .tab label {
-        background: var(--body-bg);
-        padding: 10px 10px 7px;
-        border: 1px solid var(--muted-color);
-        margin-left: -1px;
-        position: relative;
-        left: 1px;
-        opacity: 68%;
-      }
-      .tabs .tab [type="radio"] {
-        display: none;
-      }
-      .tabs .content-tab {
-        display: none;
-        position: fixed;
-        top: 72px;
-        left: 0;
-        background: #000;
-        right: 0;
-        color: #fff;
-        bottom: 100px;
-        padding: 10px 20px;
-        border: 1px solid var(--muted-color);
-        border-radius: 0 var(--border-radius) var(--border-radius)
-          var(--border-radius);
-        overflow-y: auto;
-            max-width: 1000px;
-    margin: 0 auto;
-        opacity: 0.68;
-
-      }
-      .tabs [type="radio"]:checked ~ label {
-        background: var(--control-bg);
-        border-bottom: 3px solid var(--primary-color);
-      }
-      .tabs [type="radio"]:checked ~ label ~ .content-tab {
-        display: block;
-      }
-    </style>
-    <script src="https://fastly.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-    <script src="https://fastly.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
-    <script src="https://fastly.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script>
-    <script>
-      document.getElementById('visit-forum').addEventListener('click', function () {
-          window.location.href = "https://www.nodeloc.com";
-      });
-      function getFilePath(fileName) {
-        // 从 URL 中提取路径部分
-        const urlSegments = location.pathname.split('/');
-        
-        // 动态获取年份和月份
-        const year = urlSegments[2]; // 第二部分为年份
-        const month = urlSegments[3]; // 第三部分为月份
-        
-        // 构造文件路径
-        return `/${year}/${month}/${fileName}`;
-      }
-
-        const fileNameMatch =
-          new URLSearchParams(window.location.search).get("filename") ||
-          location.pathname.split("/").pop();
-    
-        if (fileNameMatch) {
-          const fileName = decodeURIComponent(fileNameMatch);
-          const filePath = getFilePath(fileName);
-          console.log(filePath);
-    
-          $.ajax({
-            url: filePath,
-            success: render
-          });
+        body {
+            background: url('https://s.rmimg.com/2026/01/08/aed304d968a11c1e789b227f0453dfe1.jpg') center center / cover no-repeat fixed;
+            min-height: 100vh;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-      function render(data) {
-        $("#copy-target").val(data);
-        $(".loading").remove();
-        $(".tabs").append(
-          $("<div>")
-            .addClass("tab")
-            .append(
-              $("<input>")
-                .attr("type", "radio")
-                .attr("id", `taball`)
-                .attr("name", "tabs")
-                .attr("checked", "checked")
-            )
-            .append($("<label>").attr("for", `taball`).text("全部/All"))
-            .append(
-              $("<div>")
-                .addClass("content-tab")
-                .append(
-                  $("<code>")
-                    .addClass("language-bbcode")
-                    .append($("<pre>").text(data))
-                )
-            )
-        );
-        const tags = Array.from(
-          data.matchAll(/\[TAB=([^\]]*)\]([^]*?)\[\/tab\]/gi)
-        );
+        /* Glass morphism effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
 
-        tags.forEach((tagMatching, i) => {
-          if (tagMatching[1] && tagMatching[2]) {
-            const tab = $("<div>")
-              .addClass("tab")
-              .append(
-                $("<input>")
-                  .attr("type", "radio")
-                  .attr("id", `tab-${i}`)
-                  .attr("name", "tabs")
-              )
-              .append(
-                  $("<label>").attr("for", `tab-${i}`).text(tagMatching[1].replace(/"/g, ""))
-                );
+        .glass-light {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+        }
 
-            const codeContentMatching = /```([^\s]*?)([^]*)```/.exec(
-              tagMatching[2]
-            );
-            const contentEl = $("<div>").addClass("content-tab");
-            if (codeContentMatching) {
-              const code = $("<code>").append(
-                $("<pre>").text(codeContentMatching[2])
-              );
-              if (codeContentMatching[1]) {
-                contentEl.addClass("language-" + codeContentMatching[1]);
-              }
-              contentEl.append(code);
-            } else {
-              contentEl.text(tagMatching[2]);
+        /* Custom colors */
+        .btn-primary {
+            background-color: var(--primary-orange);
+            border-color: var(--primary-orange);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+
+        .nav-tabs .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-color: var(--primary-orange);
+            color: #000;
+            font-weight: 600;
+            text-shadow: none;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: #fff;
+            transition: all 0.3s;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+            font-weight: 500;
+        }
+
+        .nav-tabs .nav-link:hover {
+            color: #000;
+            background: rgba(255, 255, 255, 0.6);
+            text-shadow: none;
+        }
+
+        .nav-tabs {
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-orange) rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .nav-tabs::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        .nav-tabs::-webkit-scrollbar-thumb {
+            background: var(--primary-orange);
+            border-radius: 2px;
+        }
+
+        .nav-tabs .nav-item {
+            white-space: nowrap;
+        }
+
+        .nav-tabs .nav-link {
+            white-space: nowrap;
+        }
+
+        .text-primary-custom {
+            color: #fff !important;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Enhanced text visibility */
+        h1, h2, h3, h4, h5, h6 {
+            color: #fff !important;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .text-white-50 {
+            color: rgba(255, 255, 255, 0.95) !important;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        .text-white {
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Code block styling */
+        .code-container {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 8px;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .code-container pre {
+            margin: 0;
+            color: #f8f9fa;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* Spinner */
+        .spinner-border-custom {
+            color: var(--primary-orange);
+        }
+
+        /* Image preview */
+        .img-thumbnail {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
             }
 
-            tab.append(contentEl);
-            $(".tabs").append(tab);
-          }
-        });
-        hljs.highlightAll();
-        new ClipboardJS(".copy-btn");
-      }
+            .container {
+                padding-left: 0;
+                padding-right: 0;
+            }
 
-      function fail() {
-        $(".loading").attr("class", "error").text("无法加载数据文件，请检查URL");
-      }
+            .glass-card {
+                padding: 1rem !important;
+                margin-bottom: 1rem !important;
+            }
+
+            h1 {
+                font-size: 1.5rem !important;
+            }
+
+            .btn {
+                padding: 0.5rem 0.75rem !important;
+                font-size: 0.875rem !important;
+            }
+
+            .code-container {
+                padding: 0.75rem !important;
+            }
+
+            .code-container pre {
+                font-size: 12px !important;
+            }
+
+            /* Compact tabs for mobile */
+            .nav-tabs .nav-link {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.875rem;
+            }
+
+            /* Make buttons stack on very small screens */
+            @media (max-width: 576px) {
+                .col-lg-6 {
+                    text-align: center !important;
+                }
+
+                .btn {
+                    margin: 0.25rem !important;
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="glass-card p-4 mb-4">
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-3 mb-lg-0">
+                    <h1 class="text-primary-custom mb-2">
+                        <i class="bi bi-speedometer2"></i> NodeLoc VPS Benchmark
+                    </h1>
+                    <p class="text-white-50 mb-0">Comprehensive server performance testing report</p>
+                </div>
+                <div class="col-lg-6 text-lg-end">
+                    <button class="btn btn-primary me-2 mb-2" id="copyAllBtn">
+                        <i class="bi bi-clipboard"></i> Copy All
+                    </button>
+                    <button class="btn btn-success me-2 mb-2" id="downloadBtn">
+                        <i class="bi bi-download"></i> Download
+                    </button>
+                    <a class="btn btn-outline-light mb-2" href="https://www.nodeloc.com" target="_blank">
+                        <i class="bi bi-house"></i> NodeLoc
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div class="glass-card p-5 text-center" id="loading">
+            <div class="spinner-border spinner-border-custom mb-3" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-white mb-0">Loading benchmark results...</p>
+        </div>
+
+        <!-- Error -->
+        <div class="alert alert-warning glass-light d-none" id="error" role="alert">
+            <h4 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Error</h4>
+            <p id="errorMsg" class="mb-0"></p>
+        </div>
+
+        <!-- Image Preview -->
+        <div class="glass-card p-4 mb-4 text-center d-none" id="imagePreview">
+            <h3 class="text-white mb-4"><i class="bi bi-graph-up"></i> Visual Report</h3>
+            <img id="previewImg" alt="Benchmark Report" class="img-fluid img-thumbnail">
+        </div>
+
+        <!-- Tabs -->
+        <div class="glass-card p-4 d-none" id="tabsContainer">
+            <ul class="nav nav-tabs mb-4" id="tabsNav" role="tablist"></ul>
+            <div class="tab-content" id="tabsContent"></div>
+        </div>
+    </div>
+
+    <textarea id="copyTarget" class="visually-hidden"></textarea>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlPath = window.location.pathname;
+        
+        // Get file parameter from URL (supports both 'file' and 'filename')
+        let filePath = urlParams.get('file') || urlParams.get('filename');
+        
+        // If no parameter, try to extract from URL path
+        if (!filePath) {
+            const segments = urlPath.split('/').filter(s => s);
+            if (segments.length >= 3) {
+                const year = segments[segments.length - 3];
+                const month = segments[segments.length - 2];
+                const file = segments[segments.length - 1];
+                filePath = `${year}/${month}/${file}`;
+            }
+        }
+        
+        let fileContent = '';
+        let tabs = [];
+
+        // Get file path
+        function getFilePath() {
+            return filePath;
+        }
+
+        // Load file
+        async function loadFile() {
+            const filePath = getFilePath();
+            
+            try {
+                const response = await fetch(filePath);
+                if (!response.ok) throw new Error('Failed to load file');
+                
+                fileContent = await response.text();
+                parseContent();
+                renderTabs();
+                loadImage();
+                hideLoading();
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        // Parse content
+        function parseContent() {
+            const tabPattern = /\[tab="([^"]+)"\]([\s\S]*?)\[\/tab\]/gi;
+            let match;
+            
+            while ((match = tabPattern.exec(fileContent)) !== null) {
+                tabs.push({
+                    name: match[1],
+                    content: cleanContent(match[2])
+                });
+            }
+
+            if (tabs.length === 0) {
+                tabs.push({ name: 'Results', content: fileContent });
+            }
+        }
+
+        // Clean content
+        function cleanContent(text) {
+            return text.replace(/```/g, '').trim();
+        }
+
+        // Render tabs
+        function renderTabs() {
+            const nav = document.getElementById('tabsNav');
+            const content = document.getElementById('tabsContent');
+            
+            tabs.forEach((tab, i) => {
+                const tabId = `tab-${i}`;
+                
+                // Tab button (Bootstrap style)
+                const li = document.createElement('li');
+                li.className = 'nav-item';
+                li.innerHTML = `
+                    <button class="nav-link ${i === 0 ? 'active' : ''}" 
+                            id="${tabId}-tab" 
+                            data-bs-toggle="tab" 
+                            data-bs-target="#${tabId}" 
+                            type="button" 
+                            role="tab">
+                        ${escapeHtml(tab.name)}
+                    </button>
+                `;
+                nav.appendChild(li);
+                
+                // Tab content pane (Bootstrap style)
+                const pane = document.createElement('div');
+                pane.className = `tab-pane fade ${i === 0 ? 'show active' : ''}`;
+                pane.id = tabId;
+                pane.role = 'tabpanel';
+                pane.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="text-white mb-0">${escapeHtml(tab.name)}</h5>
+                        <button class="btn btn-sm btn-primary" onclick="copyTab(${i})">
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                    </div>
+                    <div class="code-container">
+                        <pre>${escapeHtml(tab.content)}</pre>
+                    </div>
+                `;
+                content.appendChild(pane);
+            });
+
+            document.getElementById('tabsContainer').classList.remove('d-none');
+        }
+
+        // Switch tab
+        function switchTab(index) {
+            document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.tab-content').forEach((content, i) => {
+                content.classList.toggle('active', i === index);
+            });
+        }
+
+        // Copy tab
+        window.copyTab = function(index) {
+            copyText(tabs[index].content);
+            const btn = document.querySelectorAll('.btn-primary')[index + 3]; // Skip header buttons
+            if (btn) {
+                const orig = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+                setTimeout(() => btn.innerHTML = orig, 2000);
+            }
+        };
+
+        // Copy all
+        document.getElementById('copyAllBtn').addEventListener('click', () => {
+            copyText(fileContent);
+            const btn = document.getElementById('copyAllBtn');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+            setTimeout(() => btn.innerHTML = orig, 2000);
+        });
+
+        // Download
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            const blob = new Blob([fileContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'benchmark-results.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Copy text
+        function copyText(text) {
+            const el = document.getElementById('copyTarget');
+            el.value = text;
+            el.select();
+            document.execCommand('copy');
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load image
+        function loadImage() {
+            if (!filePath) return;
+            
+            // Extract year, month, and filename from filePath
+            const parts = filePath.split('/');
+            if (parts.length < 3) return;
+            
+            const year = parts[0];
+            const month = parts[1];
+            const fileName = parts[2];
+            const imgUrl = `image.php?file=${encodeURIComponent(fileName)}&year=${year}&month=${month}`;
+            
+            const img = document.getElementById('previewImg');
+            img.onload = () => document.getElementById('imagePreview').classList.remove('d-none');
+            img.onerror = () => {}; // Silently fail if image doesn't exist
+            img.src = imgUrl;
+        }
+
+        // Show error
+        function showError(msg) {
+            document.getElementById('loading').classList.add('d-none');
+            document.getElementById('error').classList.remove('d-none');
+            document.getElementById('errorMsg').textContent = msg;
+        }
+
+        // Hide loading
+        function hideLoading() {
+            document.getElementById('loading').classList.add('d-none');
+        }
+
+        // Initialize
+        loadFile();
     </script>
-  </body>
+</body>
 </html>

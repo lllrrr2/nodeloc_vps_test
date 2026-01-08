@@ -1,0 +1,819 @@
+[tabs]
+[tab="YABS"]
+```
+# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
+#              Yet-Another-Bench-Script              #
+#                     v2025-04-20                    #
+# https://github.com/masonr/yet-another-bench-script #
+# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
+Thu Jan  8 03:54:55 PM HKT 2026
+Basic System Information:
+---------------------------------
+Uptime     : 0 days, 0 hours, 11 minutes
+Processor  : Intel Xeon Processor (Skylake, IBRS)
+CPU cores  : 1 @ 2394.380 MHz
+AES-NI     : ✔ Enabled
+VM-x/AMD-V : ✔ Enabled
+RAM        : 299.8 MiB
+Swap       : 0.0 KiB
+Disk       : 7.8 GiB
+Distro     : Debian GNU/Linux 13 (trixie)
+Kernel     : 6.12.38+deb13-amd64
+VM Type    : KVM
+IPv4/IPv6  : ✔ Online / ✔ Online
+IPv6 Network Information:
+---------------------------------
+ISP        : Snaju Development
+ASN        : AS399646 Snaju Development
+Host       : Snaju Development
+Location   : Houston, Texas (TX)
+Country    : United States
+fio Disk Speed Tests (Mixed R/W 50/50) (Partition /dev/vda3):
+---------------------------------
+Block Size | 4k            (IOPS) | 64k           (IOPS)
+  ------   | ---            ----  | ----           ---- 
+Read       | 192.74 MB/s  (48.1k) | 1.29 GB/s    (20.2k)
+Write      | 193.25 MB/s  (48.3k) | 1.30 GB/s    (20.4k)
+Total      | 386.00 MB/s  (96.4k) | 2.60 GB/s    (40.7k)
+           |                      |                     
+Block Size | 512k          (IOPS) | 1m            (IOPS)
+  ------   | ---            ----  | ----           ---- 
+Read       | 2.01 GB/s     (3.9k) | 1.93 GB/s     (1.8k)
+Write      | 2.11 GB/s     (4.1k) | 2.06 GB/s     (2.0k)
+Total      | 4.13 GB/s     (8.0k) | 4.00 GB/s     (3.9k)
+ *cue elevator music*Geekbench test failed and low memory was detected. Add at least 1GB of SWAP or use GB4 instead (higher compatibility with low memory systems).
+YABS completed in 33 sec
+```
+[/tab]
+[tab="IP质量"]
+```
+########################################################################
+                      IP质量体检报告：149.112.*.*
+                   https://github.com/xykt/IPQuality
+                bash <(curl -sL https://Check.Place) -I
+        报告时间：2026-01-08 15:55:32 CST  脚本版本：v2025-12-01
+########################################################################
+一、基础信息（Maxmind 数据库）
+自治系统号：            AS399646
+组织：                  DARTNODE
+坐标：                  95°6′1″W, 29°34′21″N
+地图：                  https://check.place/29.5726,-95.1004,15,cn
+城市：                  得克萨斯州, 休斯敦, 77058
+使用地：                [US]美国, [NA]北美洲
+注册地：                [US]美国
+时区：                  America/Chicago
+IP类型：                 原生IP 
+二、IP类型属性
+数据库：      IPinfo    ipregistry    ipapi    IP2Location   AbuseIPDB 
+使用类型：     机房        机房        商业        机房        机房    
+公司类型：     机房        商业        商业        机房    
+三、风险评分
+风险等级：      极低         低       中等       高         极高
+IP2Location：                                       80|高风险
+Scamalytics：                                    70|高风险
+ipapi：                         1.56%|较高风险
+AbuseIPDB：    0|低风险
+IPQS：              30|低风险
+DB-IP：         |低风险
+四、风险因子
+库： IP2Location ipapi ipregistry IPQS Scamalytics ipdata IPinfo IPWHOIS
+地区：    [US]    [US]    [US]    [US]    [US]    [US]    [US]     无 
+代理：     是      是      是      否      是      否      否      无 
+Tor：      否      否      否      否      否      否      否      无 
+VPN：      否      否      否      否      否      无      否      无 
+服务器：   是      否      是      无      否      否      是      无 
+滥用：     否      是      否      否      否      否      无      无 
+机器人：   否      否      无      否      否      无      无      无 
+五、流媒体及AI服务解锁检测
+服务商：  TikTok   Disney+  Netflix Youtube  AmazonPV  Spotify  ChatGPT 
+状态：     解锁     解锁     解锁     解锁     解锁     屏蔽     解锁   
+地区：     [US]     [US]     [US]     [US]     [US]              [US]   
+方式：     原生     原生     原生     原生     原生              原生   
+六、邮局连通性及黑名单检测
+本地25端口出站：阻断
+通信：远端25端口不可达​
+IP地址黑名单数据库：  有效 439   正常 414   已标记 25   黑名单 0
+========================================================================
+今日IP检测量：1070；总检测量：894082。感谢使用xy系列脚本！ 
+报告链接：https://Report.Check.Place/ip/GZ520MLQQ.svg
+
+########################################################################
+                 IP质量体检报告：2602:f9f3:1:*:*:*:*:*
+                   https://github.com/xykt/IPQuality
+                bash <(curl -sL https://Check.Place) -I
+        报告时间：2026-01-08 15:55:32 CST  脚本版本：v2025-12-01
+########################################################################
+一、基础信息（Maxmind 数据库）
+自治系统号：            AS399646
+组织：                  DARTNODE
+坐标：                  95°6′1″W, 29°34′21″N
+地图：                  https://check.place/29.5726,-95.1004,15,cn
+城市：                  得克萨斯州, 休斯敦, 77058
+使用地：                [US]美国, [NA]北美洲
+注册地：                [US]美国
+时区：                  America/Chicago
+IP类型：                 原生IP 
+二、IP类型属性
+数据库：      IPinfo    ipregistry    ipapi    IP2Location   AbuseIPDB 
+使用类型：     机房        机房        商业        机房        机房    
+公司类型：     机房        机房        商业        机房    
+三、风险评分
+风险等级：      极低         低       中等       高         极高
+IP2Location：   3|低风险
+Scamalytics：  0|低风险
+ipapi：    0.00%|极低风险
+AbuseIPDB：    0|低风险
+IPQS：         0|低风险
+DB-IP：         |低风险
+四、风险因子
+库： IP2Location ipapi ipregistry IPQS Scamalytics ipdata IPinfo IPWHOIS
+地区：    [US]    [US]    [US]    [US]    [US]    [US]    [US]     无 
+代理：     否      否      否      否      否      否      否      无 
+Tor：      否      否      否      否      否      否      否      无 
+VPN：      否      否      否      否      否      无      否      无 
+服务器：   是      否      是      无      否      否      是      无 
+滥用：     否      否      否      否      否      否      无      无 
+机器人：   否      否      无      否      否      无      无      无 
+五、流媒体及AI服务解锁检测
+服务商：  TikTok   Disney+  Netflix Youtube  AmazonPV  Spotify  ChatGPT 
+状态：     失败     解锁     解锁     解锁     屏蔽     屏蔽     解锁   
+地区：              [US]     [US]     [US]                       [US]   
+方式：              原生     原生     原生                       原生   
+六、邮局连通性及黑名单检测
+本地25端口出站：阻断
+通信：+Gmail-Outlook-Yahoo-Apple+QQ-MailRU-AOL-GMX-MailCOM-163-Sohu-Sina
+========================================================================
+今日IP检测量：1074；总检测量：894086。感谢使用xy系列脚本！ 
+报告链接：https://Report.Check.Place/ip/1HSLKCEPZ.svg
+
+```
+[/tab]
+[tab="流媒体"]
+```
+项目地址 https://github.com/lmc999/RegionRestrictionCheck 
+改版地址 https://github.com/xykt/RegionRestrictionCheck 
+脚本适配OS: CentOS 6+, Ubuntu 14.04+, Debian 8+, MacOS, Android (Termux), iOS (iSH)
+ ** 测试时间: Thu Jan  8 03:56:30 PM HKT 2026
+ ** 正在测试IPv4解锁情况 
+--------------------------------
+ ** 您的网络为: DARTNODE (149.112.*.*) 
+============[ Multination ]============
+ Dazn:					Unsupport
+ TikTok:		原生解锁	Yes (Region: US)
+ Disney+:		原生解锁	Yes (Region: US)
+ Netflix:		原生解锁	Yes (Region: US)
+ YouTube Premium:	原生解锁	Yes
+ Amazon Prime Video:	原生解锁	Yes (Region: US)
+ TVBAnywhere+:		原生解锁	Yes
+ iQyi Oversea Region:	原生解锁	US
+ YouTube CDN:				Dallas, TX 
+ Netflix Preferred CDN:			Associated with [Ezee Fiber] in [Houston, TX ]
+ Spotify Registration:			No
+ Steam Currency:			USD
+ ChatGPT:		原生解锁	Yes (Region: US)
+ Google Gemini:		原生解锁	Yes (Region: USA)
+ Bing Region:				US
+ Wikipedia Editability:			Yes
+ Instagram Licensed Audio:		-> Instagram Licensed Audio:		Failed
+ ---Forum---
+ Reddit:				Yes
+=======================================
+===========[ North America ]===========
+ FOX:					Yes
+ Hulu:					Yes
+ NFL+:					Yes
+ ESPN+:[Sponsored by Jam]		No
+ MGM+:					Failed (Network Connection)
+ MGM+:					Failed
+ Starz:					Failed
+ Philo:					Yes
+ FXNOW:					Yes
+ TLC GO:				Yes
+ HBO Max:				Yes
+ Shudder:				Yes
+ BritBox:				Yes
+ Crackle:				Failed (Network Connection)
+ CW TV:					Yes
+ A&E TV:				Failed
+ NBA TV:				Yes
+ NBC TV:				Yes
+ Fubo TV:				No
+ Tubi TV:				Yes
+ Sling TV:				Yes
+ Pluto TV:				Yes
+ Acorn TV:				Yes
+ SHOWTIME:				Yes
+ encoreTVB:				Yes
+ Discovery+:				Yes (Region: US)
+ Paramount+:				Yes
+ Peacock TV:				Yes
+ Popcornflix:				Failed (Network Connection)
+ Crunchyroll:				Yes
+ Directv Stream:			Failed (Network Connection)
+ KOCOWA:				Yes
+ SonyLiv:				Failed (Network Connection)
+ AMC+:					Yes (Region: USA)
+ ---CA---
+ HotStar:				No
+ CBC Gem:				Failed (Network Connection)
+ Crave:					Yes
+=======================================
+ ** 正在测试IPv6解锁情况 
+--------------------------------
+ ** 您的网络为: DARTNODE (2602:f9f3:1:*:*) 
+============[ Multination ]============
+ Dazn:					Failed (Network Connection)
+ TikTok:		原生解锁	Yes (Region: US)
+ Disney+:		原生解锁	Yes (Region: US)
+ Netflix:		原生解锁	Yes (Region: US)
+ YouTube Premium:	原生解锁	Yes
+ Amazon Prime Video:			Unsupported
+ TVBAnywhere+:				Failed (Network Connection)
+ iQyi Oversea Region:			Failed
+ YouTube CDN:				Dallas, TX 
+ Netflix Preferred CDN:			Associated with [Ezee Fiber] in [Houston, TX ]
+ Spotify Registration:			No
+ Steam Currency:			Failed (Network Connection)
+ ChatGPT:				Failed
+ Google Gemini:		原生解锁	Yes (Region: USA)
+ Bing Region:				US
+ Wikipedia Editability:			Yes
+ Instagram Licensed Audio:		-> Instagram Licensed Audio:		Failed
+ ---Forum---
+ Reddit:				Failed (Network Connection)
+=======================================
+===========[ North America ]===========
+ FOX:					Yes
+ Hulu:					Yes
+ NFL+:					IPv6 Not Support
+ ESPN+:[Sponsored by Jam]		Yes
+ MGM+:					Failed (Network Connection)
+ MGM+:					Failed
+ Starz:					Failed (Network Connection)
+ Philo:					IPv6 Not Support
+ FXNOW:					IPv6 Not Support
+ TLC GO:				IPv6 Not Support
+ HBO Max:				Yes
+ Shudder:				Yes
+ BritBox:				Yes
+ Crackle:				Failed (Network Connection)
+ CW TV:					Yes
+ A&E TV:				IPv6 Not Support
+ NBA TV:				Yes
+ NBC TV:				Yes
+ Fubo TV:				IPv6 Not Support
+ Tubi TV:				Yes
+ Sling TV:				Failed (Network Connection)
+ Pluto TV:				Yes
+ Acorn TV:				Failed (Network Connection)
+ SHOWTIME:				Yes
+ encoreTVB:				Failed (Network Connection)
+ Discovery+:				Failed (Network Connection)
+ Paramount+:				Yes
+ Peacock TV:				Yes
+ Popcornflix:				IPv6 Not Support
+ Crunchyroll:				IPv6 Not Support
+ Directv Stream:			Failed (Network Connection)
+ KOCOWA:				IPv6 Not Support
+ SonyLiv:				Failed (Network Connection)
+ AMC+:					Yes (Region: USA)
+ ---CA---
+ HotStar:		原生解锁	Yes (Region: US)
+ CBC Gem:				Failed (Network Connection)
+ Crave:					Failed (Network Connection)
+=======================================
+本次测试已结束，感谢使用此脚本 
+检测脚本当天运行次数: 108; 共计运行次数: 195137 
+```
+[/tab]
+[tab="响应"]
+```
+正在测试 https://www.google.com
+尝试 1: 71.656000 ms
+尝试 2: 69.386000 ms
+尝试 3: 66.218000 ms
+尝试 4: 69.161000 ms
+尝试 5: 59.909000 ms
+平均时间: 67.26 ms for https://www.google.com
+----------------------------------
+正在测试 https://www.facebook.com
+尝试 1: 140.366000 ms
+尝试 2: 123.858000 ms
+尝试 3: 122.317000 ms
+尝试 4: 136.564000 ms
+尝试 5: 129.895000 ms
+平均时间: 130.60 ms for https://www.facebook.com
+----------------------------------
+正在测试 https://www.twitter.com
+尝试 1: 32.530000 ms
+尝试 2: 29.889000 ms
+尝试 3: 34.615000 ms
+尝试 4: 27.618000 ms
+尝试 5: 31.114000 ms
+平均时间: 31.15 ms for https://www.twitter.com
+----------------------------------
+正在测试 https://www.youtube.com
+尝试 1: 219.129000 ms
+尝试 2: 233.996000 ms
+尝试 3: 250.404000 ms
+尝试 4: 227.393000 ms
+尝试 5: 258.997000 ms
+平均时间: 237.98 ms for https://www.youtube.com
+----------------------------------
+正在测试 https://www.netflix.com
+尝试 1: 622.387000 ms
+尝试 2: 619.053000 ms
+尝试 3: 711.500000 ms
+尝试 4: 656.822000 ms
+尝试 5: 628.888000 ms
+平均时间: 647.73 ms for https://www.netflix.com
+----------------------------------
+正在测试 https://chat.openai.com
+尝试 1: 31.120000 ms
+尝试 2: 29.094000 ms
+尝试 3: 29.139000 ms
+尝试 4: 29.148000 ms
+尝试 5: 29.207000 ms
+平均时间: 29.54 ms for https://chat.openai.com
+----------------------------------
+正在测试 https://www.github.com
+尝试 1: 107.402000 ms
+尝试 2: 108.168000 ms
+尝试 3: 102.661000 ms
+尝试 4: 106.938000 ms
+尝试 5: 111.653000 ms
+平均时间: 107.36 ms for https://www.github.com
+----------------------------------
+网站                          平均时间(ms)
+--------------------------------------------------
+https://www.google.com                67.26 ms
+https://www.facebook.com             130.60 ms
+https://www.twitter.com               31.15 ms
+https://www.youtube.com              237.98 ms
+https://www.netflix.com              647.73 ms
+https://chat.openai.com               29.54 ms
+https://www.github.com               107.36 ms
+--------------------------------------------------
+Total Avg                            178.80 ms
+```
+[/tab]
+[tab="多线程测速"]
+```
+ Version               : v2024-04-25
+ Usage                 : bash <(curl -sL bash.icu/speedtest)
+ GitHub                : https://github.com/i-abc/speedtest
+------------------------------------------------------------------------
+大陆三网+教育网 IPv4 多线程测速，v2024-03-15
+------------------------------------------------------------------------
+测速节点            下载/Mbps      上传/Mbps      延迟/ms      抖动/ms
+ 最近的测速点        924.28 Mbps    923.90 Mbps    1.04 ms      0.15 ms      
+ 电信 江苏苏州       491.27 Mbps    1.01 Mbps      185.68 ms    0.22 ms      
+ 电信 浙江杭州       381.14 Mbps    0.67 Mbps      187.27 ms    1.56 ms      
+ 电信 浙江宁波 5G    479.78 Mbps    0.38 Mbps      228.73 ms    1.93 ms      
+ 测速次数过多，暂时被限制，请过一段时间后再进行测试
+ ------------------------------------------------------------------------
+系统时间：2026-01-08 15:59:33 HKT
+北京时间: 2026-01-08 15:59:33 CST
+------------------------------------------------------------------------
+```
+[/tab]
+[tab="单线程测速"]
+```
+ Version               : v2024-04-25
+ Usage                 : bash <(curl -sL bash.icu/speedtest)
+ GitHub                : https://github.com/i-abc/speedtest
+------------------------------------------------------------------------
+大陆三网+教育网 IPv4 单线程测速，v2024-03-15
+------------------------------------------------------------------------
+测速节点            下载/Mbps      上传/Mbps      延迟/ms      抖动/ms
+ 电信 江苏苏州         失败         1.20 Mbps      202.80 ms    2.20 ms      
+ 电信 浙江杭州       14.10 Mbps       失败         522.10 ms     失败        
+ 电信 浙江宁波 5G      失败         0.10 Mbps      202.70 ms    6.50 ms      
+ 电信 江苏镇江 5G    49.30 Mbps     0.10 Mbps      207.80 ms    4.60 ms      
+ 电信 江苏南京 5G    41.10 Mbps       失败         209.70 ms    4.60 ms      
+ 联通 北京           49.20 Mbps     88.30 Mbps     207.10 ms    17.60 ms     
+ ------------------------------------------------------------------------
+系统时间：2026-01-08 16:07:43 HKT
+北京时间: 2026-01-08 16:07:43 CST
+------------------------------------------------------------------------
+```
+[/tab]
+[tab="回程路由"]
+```
+No:1/9 Traceroute to 中国 广东 电信 (TCP Mode, Max 30 Hop, IPv4)
+===================================================================
+NextTrace v1.5.0 2025-11-28T02:24:32Z 82cebb7
+[NextTrace API] preferred API IP - 172.67.69.163 - 349.58ms - Misaka.LAX
+IP Geo Data Provider: LeoMoeAPI
+traceroute to 183.47.102.91 (gd-ct-v4.ip.zstaticcdn.com), 30 hops max, 52 bytes payload, TCP mode
+1   192.168.202.1   *                         RFC1918          
+                                              0.46 ms
+2   23.26.125.1     AS23470                   美国 加利福尼亚州 圣克拉拉  reliablesite.net 
+                                              0.69 ms
+3   *
+4   154.24.56.25    AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              2.65 ms
+5   154.24.33.241   AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              2.25 ms
+6   154.54.168.101  AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              2.86 ms
+7   154.54.171.1    AS174    [COGENT-BONE]    美国 德克萨斯 达拉斯  cogentco.com 
+                                              7.57 ms
+8   154.54.165.26   AS174    [COGENT-BONE]    美国 得克萨斯州 埃尔帕索  cogentco.com 
+                                              19.05 ms
+9   154.54.166.58   AS174    [COGENT-BONE]    美国 亚利桑那 凤凰城  cogentco.com 
+                                              27.69 ms
+10  154.54.44.86    AS174    [COGENT-BONE]    美国 加利福尼亚 洛杉矶  cogentco.com 
+                                              37.87 ms
+11  154.54.40.157   AS174    [COGENT-BONE]    美国 加利福尼亚 圣何塞  cogentco.com 
+                                              50.33 ms
+12  154.54.169.38   AS174    [COGENT-BONE]    美国 加利福尼亚 圣何塞  cogentco.com 
+                                              49.25 ms
+13  38.104.138.106  AS174                     美国 加利福尼亚 圣克拉拉  cogentco.com 
+                                              49.13 ms
+14  202.97.22.121   AS4134   [CHINANET-BB]    中国 广东 广州  chinatelecom.com.cn  电信
+                                              200.44 ms
+15  *
+16  202.97.82.65    AS4134   [CHINANET-BB]    中国 广东 广州  chinatelecom.com.cn  电信
+                                              214.37 ms
+17  *
+18  *
+19  *
+20  *
+21  *
+22  *
+23  *
+24  183.47.102.91   AS4134   [APNIC-AP]       中国 广东省 广州市  chinatelecom.com.cn  电信
+                                              206.55 ms
+No:2/9 Traceroute to 中国 上海 电信 (TCP Mode, Max 30 Hop, IPv4)
+===================================================================
+NextTrace v1.5.0 2025-11-28T02:24:32Z 82cebb7
+[NextTrace API] preferred API IP - 104.26.12.151 - 93.11ms - Misaka.LAX
+IP Geo Data Provider: LeoMoeAPI
+traceroute to 101.226.101.195 (sh-ct-v4.ip.zstaticcdn.com), 30 hops max, 52 bytes payload, TCP mode
+1   192.168.202.1   *                         RFC1918          
+                                              0.42 ms
+2   23.26.125.1     AS23470                   美国 加利福尼亚州 圣克拉拉  reliablesite.net 
+                                              24.70 ms
+3   *
+4   154.24.56.17    AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              2.23 ms
+5   154.24.33.229   AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              2.24 ms
+6   154.54.168.105  AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              2.35 ms
+7   154.54.171.5    AS174    [COGENT-BONE]    美国 德克萨斯 达拉斯  cogentco.com 
+                                              6.83 ms
+8   154.54.165.30   AS174    [COGENT-BONE]    美国 得克萨斯州 埃尔帕索  cogentco.com 
+                                              18.34 ms
+9   154.54.166.70   AS174    [COGENT-BONE]    美国 亚利桑那 凤凰城  cogentco.com 
+                                              26.76 ms
+10  154.54.45.162   AS174    [COGENT-BONE]    美国 加利福尼亚 洛杉矶  cogentco.com 
+                                              37.27 ms
+11  154.54.169.1    AS174    [COGENT-BONE]    美国 加利福尼亚 圣何塞  cogentco.com 
+                                              49.70 ms
+12  154.54.169.66   AS174    [COGENT-BONE]    美国 加利福尼亚 圣何塞  cogentco.com 
+                                              49.09 ms
+13  38.104.138.106  AS174                     美国 加利福尼亚 圣克拉拉  cogentco.com 
+                                              258.59 ms
+14  202.97.43.113   AS4134   [CHINANET-BB]    中国 上海  X-I chinatelecom.com.cn  电信
+                                              184.94 ms
+15  202.97.83.61    AS4134   [CHINANET-BB]    中国 上海   chinatelecom.com.cn  电信
+                                              197.10 ms
+16  *
+17  *
+18  *
+19  *
+20  *
+21  *
+22  *
+23  *
+24  *
+25  *
+26  101.226.101.195 AS4812   [CHINANET-SH]    中国 上海市   chinatelecom.cn  电信
+                                              189.82 ms
+No:3/9 Traceroute to 中国 北京 电信 (TCP Mode, Max 30 Hop, IPv4)
+===================================================================
+NextTrace v1.5.0 2025-11-28T02:24:32Z 82cebb7
+[NextTrace API] preferred API IP - [2606:4700:20::681a:d97] - 93.67ms - Misaka.LAX
+IP Geo Data Provider: LeoMoeAPI
+traceroute to 106.37.68.13 (bj-ct-v4.ip.zstaticcdn.com), 30 hops max, 52 bytes payload, TCP mode
+1   192.168.202.1   *                         RFC1918          
+                                              0.44 ms
+2   23.26.125.1     AS23470                   美国 加利福尼亚州 圣克拉拉  reliablesite.net 
+                                              0.74 ms
+3   *
+4   154.24.56.17    AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              2.24 ms
+5   154.24.33.229   AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              2.50 ms
+6   154.54.168.101  AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              2.94 ms
+7   154.54.171.1    AS174    [COGENT-BONE]    美国 德克萨斯 达拉斯  cogentco.com 
+                                              7.49 ms
+8   154.54.165.26   AS174    [COGENT-BONE]    美国 得克萨斯州 埃尔帕索  cogentco.com 
+                                              18.70 ms
+9   154.54.166.58   AS174    [COGENT-BONE]    美国 亚利桑那 凤凰城  cogentco.com 
+                                              27.29 ms
+10  154.54.44.86    AS174    [COGENT-BONE]    美国 加利福尼亚 洛杉矶  cogentco.com 
+                                              37.89 ms
+11  *
+12  154.54.169.38   AS174    [COGENT-BONE]    美国 加利福尼亚 圣何塞  cogentco.com 
+                                              49.51 ms
+13  38.104.138.106  AS174                     美国 加利福尼亚 圣克拉拉  cogentco.com 
+                                              59.14 ms
+14  *
+15  *
+16  *
+17  *
+18  *
+19  219.141.162.214 AS4847   [CHINATELECOM-BJ] 中国 北京   bj.189.cn 
+                                              201.76 ms
+20  *
+21  *
+22  106.37.68.13    AS4847   [CHINANET-HN]    中国 北京   bj.189.cn 
+                                              197.52 ms
+No:4/9 Traceroute to 中国 广东 联通 (TCP Mode, Max 30 Hop, IPv4)
+===================================================================
+NextTrace v1.5.0 2025-11-28T02:24:32Z 82cebb7
+[NextTrace API] preferred API IP - 172.67.69.163 - 101.82ms - Misaka.LAX
+IP Geo Data Provider: LeoMoeAPI
+traceroute to 157.148.63.62 (gd-cu-v4.ip.zstaticcdn.com), 30 hops max, 52 bytes payload, TCP mode
+1   192.168.202.1   *                         RFC1918          
+                                              0.47 ms
+2   23.26.125.1     AS23470                   美国 加利福尼亚州 圣克拉拉  reliablesite.net 
+                                              0.53 ms
+3   216.227.254.249 AS35847                   美国 德克萨斯州 休斯敦  ezeefiber.com 
+                                              1.31 ms
+4   213.248.67.119  AS1299   [TELIANET]       美国 德克萨斯州 休斯敦  arelion.com 
+                                              1.97 ms
+5   213.248.67.118  AS1299   [TELIANET]       美国 德克萨斯州 休斯敦  arelion.com 
+                                              2.28 ms
+6   62.115.123.106  AS1299   [ARELION-NET]    美国 德克萨斯 达拉斯  arelion.com 
+                                              7.60 ms
+    [MPLS: Lbl 413550, TC 0, S 1, TTL 1]
+7   62.115.140.236  AS1299   [ARELION-NET]    美国 加利福尼亚 洛杉矶  arelion.com 
+                                              38.30 ms
+    [MPLS: Lbl 413550, TC 0, S 1, TTL 1]
+8   62.115.126.251  AS1299   [ARELION-NET]    美国 加利福尼亚 洛杉矶  arelion.com 
+                                              37.86 ms
+9   80.239.134.247  AS1299                    美国 加利福尼亚 洛杉矶  arelion.com 
+                                              40.02 ms
+10  219.158.17.81   AS4837   [CU169-BACKBONE] 中国 北京   chinaunicom.cn  联通
+                                              213.83 ms
+11  219.158.3.137   AS4837   [CU169-BACKBONE] 中国 北京   chinaunicom.cn  联通
+                                              212.15 ms
+12  *
+13  *
+14  *
+15  *
+16  *
+17  *
+18  *
+19  *
+20  157.148.63.62   AS136958 [UNICOM-GD]      中国 广东省 广州市  chinaunicom.cn  联通
+                                              238.90 ms
+No:5/9 Traceroute to 中国 上海 联通 (TCP Mode, Max 30 Hop, IPv4)
+===================================================================
+NextTrace v1.5.0 2025-11-28T02:24:32Z 82cebb7
+[NextTrace API] preferred API IP - [2606:4700:20::681a:c97] - 89.82ms - Misaka.LAX
+IP Geo Data Provider: LeoMoeAPI
+traceroute to 58.246.163.108 (sh-cu-v4.ip.zstaticcdn.com), 30 hops max, 52 bytes payload, TCP mode
+1   192.168.202.1   *                         RFC1918          
+                                              0.53 ms
+2   23.26.125.1     AS23470                   美国 加利福尼亚州 圣克拉拉  reliablesite.net 
+                                              1.45 ms
+3   216.227.254.249 AS35847                   美国 德克萨斯州 休斯敦  ezeefiber.com 
+                                              1.57 ms
+4   213.248.67.119  AS1299   [TELIANET]       美国 德克萨斯州 休斯敦  arelion.com 
+                                              2.09 ms
+5   213.248.67.118  AS1299   [TELIANET]       美国 德克萨斯州 休斯敦  arelion.com 
+                                              1.99 ms
+6   62.115.123.106  AS1299   [ARELION-NET]    美国 德克萨斯 达拉斯  arelion.com 
+                                              8.07 ms
+    [MPLS: Lbl 413550, TC 0, S 1, TTL 1]
+7   62.115.140.236  AS1299   [ARELION-NET]    美国 加利福尼亚 洛杉矶  arelion.com 
+                                              38.23 ms
+    [MPLS: Lbl 413550, TC 0, S 1, TTL 1]
+8   62.115.126.251  AS1299   [ARELION-NET]    美国 加利福尼亚 洛杉矶  arelion.com 
+                                              38.07 ms
+9   80.239.134.247  AS1299                    美国 加利福尼亚 洛杉矶  arelion.com 
+                                              39.89 ms
+10  *
+11  *
+12  *
+13  *
+14  *
+15  *
+16  *
+17  *
+18  *
+19  *
+20  58.246.163.108  AS140979                  中国 上海市   chinaunicom.cn  联通
+                                              231.21 ms
+No:6/9 Traceroute to 中国 北京 联通 (TCP Mode, Max 30 Hop, IPv4)
+===================================================================
+NextTrace v1.5.0 2025-11-28T02:24:32Z 82cebb7
+[NextTrace API] preferred API IP - [2606:4700:20::ac43:45a3] - 92.28ms - Misaka.LAX
+IP Geo Data Provider: LeoMoeAPI
+traceroute to 221.222.185.232 (bj-cu-v4.ip.zstaticcdn.com), 30 hops max, 52 bytes payload, TCP mode
+1   192.168.202.1   *                         RFC1918          
+                                              0.37 ms
+2   23.26.125.1     AS23470                   美国 加利福尼亚州 圣克拉拉  reliablesite.net 
+                                              0.51 ms
+3   *
+4   154.24.56.25    AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              2.34 ms
+5   154.24.33.241   AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              2.36 ms
+6   154.54.168.101  AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              3.20 ms
+7   154.54.171.1    AS174    [COGENT-BONE]    美国 德克萨斯 达拉斯  cogentco.com 
+                                              7.45 ms
+8   154.54.165.26   AS174    [COGENT-BONE]    美国 得克萨斯州 埃尔帕索  cogentco.com 
+                                              19.26 ms
+9   154.54.166.58   AS174    [COGENT-BONE]    美国 亚利桑那 凤凰城  cogentco.com 
+                                              27.41 ms
+10  154.54.44.86    AS174    [COGENT-BONE]    美国 加利福尼亚 洛杉矶  cogentco.com 
+                                              37.90 ms
+11  *
+12  154.54.169.38   AS174    [COGENT-BONE]    美国 加利福尼亚 圣何塞  cogentco.com 
+                                              49.25 ms
+13  154.54.7.22     AS174    [COGENT-BONE]    美国 加利福尼亚 圣何塞  cogentco.com 
+                                              49.17 ms
+14  38.88.224.14    AS174                     美国 加利福尼亚 帕洛阿尔托 / 圣何塞  cogentco.com 
+                                              283.63 ms
+15  219.158.98.9    AS4837   [CU169-BACKBONE] 中国 北京   chinaunicom.cn  联通
+                                              238.49 ms
+16  219.158.3.137   AS4837   [CU169-BACKBONE] 中国 北京   chinaunicom.cn  联通
+                                              239.75 ms
+17  *
+18  *
+19  *
+20  *
+21  *
+22  *
+23  221.222.185.232 AS4808   [UNICOM-BJ]      中国 北京  海淀 www.bbn.com.cn 
+                                              255.19 ms
+No:7/9 Traceroute to 中国 广东 移动 (TCP Mode, Max 30 Hop, IPv4)
+===================================================================
+NextTrace v1.5.0 2025-11-28T02:24:32Z 82cebb7
+[NextTrace API] preferred API IP - [2606:4700:20::681a:c97] - 90.22ms - Misaka.LAX
+IP Geo Data Provider: LeoMoeAPI
+traceroute to 211.139.145.129 (gd-cm-v4.ip.zstaticcdn.com), 30 hops max, 52 bytes payload, TCP mode
+1   192.168.202.1   *                         RFC1918          
+                                              0.48 ms
+2   23.26.125.1     AS23470                   美国 加利福尼亚州 圣克拉拉  reliablesite.net 
+                                              0.74 ms
+3   216.227.254.249 AS35847                   美国 德克萨斯州 休斯敦  ezeefiber.com 
+                                              1.02 ms
+4   213.248.67.119  AS1299   [TELIANET]       美国 德克萨斯州 休斯敦  arelion.com 
+                                              2.00 ms
+5   213.248.67.118  AS1299   [TELIANET]       美国 德克萨斯州 休斯敦  arelion.com 
+                                              2.13 ms
+6   62.115.123.106  AS1299   [ARELION-NET]    美国 德克萨斯 达拉斯  arelion.com 
+                                              7.73 ms
+    [MPLS: Lbl 415560, TC 0, S 1, TTL 1]
+7   62.115.136.83   AS1299   [ARELION-NET]    美国 德克萨斯 达拉斯  arelion.com 
+                                              72.08 ms
+    [MPLS: Lbl 25219, TC 0, S 0, TTL 1]
+    [MPLS: Lbl 415560, TC 0, S 1, TTL 1]
+8   62.115.139.130  AS1299   [ARELION-NET]    美国 德克萨斯 达拉斯  arelion.com 
+                                              8.06 ms
+    [MPLS: Lbl 415560, TC 0, S 1, TTL 1]
+9   62.115.140.246  AS1299   [ARELION-NET]    美国 加利福尼亚 洛杉矶  arelion.com 
+                                              38.31 ms
+    [MPLS: Lbl 415560, TC 0, S 1, TTL 1]
+10  62.115.137.206  AS1299   [ARELION-NET]    美国 加利福尼亚 帕洛阿托  arelion.com 
+                                              51.93 ms
+    [MPLS: Lbl 415560, TC 0, S 1, TTL 1]
+11  62.115.139.111  AS1299   [ARELION-NET]    美国 加利福尼亚 帕洛阿托  arelion.com 
+                                              76.40 ms
+    [MPLS: Lbl 26296, TC 0, S 0, TTL 1]
+    [MPLS: Lbl 415560, TC 0, S 1, TTL 1]
+12  62.115.139.106  AS1299   [ARELION-NET]    美国 加利福尼亚 圣何塞  arelion.com 
+                                              55.26 ms
+    [MPLS: Lbl 415560, TC 0, S 1, TTL 1]
+13  62.115.132.153  AS1299   [ARELION-NET]    美国 华盛顿 西雅图  arelion.com 
+                                              68.79 ms
+14  62.115.171.221  AS1299   [ARELION-NET]    美国 华盛顿州 西雅图 Telia-CMI-Peer arelion.com 
+                                              67.66 ms
+15  223.120.6.53    AS58453  [CMI-INT]        美国 华盛顿州 西雅图  cmi.chinamobile.com  移动
+                                              67.63 ms
+16  223.120.13.202  AS58453  [CMI-INT]        中国 广东 广州  cmi.chinamobile.com  移动
+                                              200.61 ms
+17  221.183.55.82   AS9808   [CMNET]          中国 广东 广州 X-I chinamobileltd.com  移动
+                                              209.78 ms
+18  221.183.92.21   AS9808   [CMNET]          中国 广东 广州 I-C chinamobileltd.com  移动
+                                              203.35 ms
+19  *
+20  *
+21  183.235.232.90  AS56040  [APNIC-AP]       中国 广东 江门市  gd.10086.cn  移动
+                                              205.73 ms
+22  183.235.226.126 AS56040  [APNIC-AP]       中国 广东 广州  gd.10086.cn  移动
+                                              207.32 ms
+23  211.136.241.242 AS56040  [CMNET]          中国 广东 广州  gd.10086.cn  移动
+                                              207.32 ms
+24  120.198.26.250  AS56040  [APNIC-AP]       中国 广东 广州  gd.10086.cn  移动
+                                              213.32 ms
+25  *
+26  *
+27  *
+28  *
+29  211.139.145.129 AS56040  [CMNET]          中国 广东 广州  gd.10086.cn  移动
+                                              213.28 ms
+No:8/9 Traceroute to 中国 上海 移动 (TCP Mode, Max 30 Hop, IPv4)
+===================================================================
+NextTrace v1.5.0 2025-11-28T02:24:32Z 82cebb7
+[NextTrace API] preferred API IP - [2606:4700:20::681a:c97] - 92.24ms - Misaka.LAX
+IP Geo Data Provider: LeoMoeAPI
+traceroute to 117.185.117.109 (sh-cm-v4.ip.zstaticcdn.com), 30 hops max, 52 bytes payload, TCP mode
+1   192.168.202.1   *                         RFC1918          
+                                              0.34 ms
+2   23.26.125.1     AS23470                   美国 加利福尼亚州 圣克拉拉  reliablesite.net 
+                                              0.81 ms
+3   *
+4   154.24.56.17    AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              2.32 ms
+5   154.24.33.229   AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              1.90 ms
+6   154.54.168.101  AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              3.30 ms
+7   154.54.171.1    AS174    [COGENT-BONE]    美国 德克萨斯 达拉斯  cogentco.com 
+                                              7.35 ms
+8   154.54.165.26   AS174    [COGENT-BONE]    美国 得克萨斯州 埃尔帕索  cogentco.com 
+                                              18.69 ms
+9   154.54.166.58   AS174    [COGENT-BONE]    美国 亚利桑那 凤凰城  cogentco.com 
+                                              27.70 ms
+10  154.54.44.86    AS174    [COGENT-BONE]    美国 加利福尼亚 洛杉矶  cogentco.com 
+                                              37.76 ms
+11  154.54.27.118   AS174    [COGENT-BONE]    美国 加利福尼亚 洛杉矶  cogentco.com 
+                                              38.07 ms
+12  38.104.84.249   AS174                     美国 加利福尼亚 洛杉矶  cogentco.com 
+                                              37.54 ms
+13  223.120.6.217   AS58453  [CMI-INT]        美国 加利福尼亚 洛杉矶  cmi.chinamobile.com  移动
+                                              37.79 ms
+14  *
+15  221.183.89.182  AS9808   [CMNET]          中国 上海  X-I chinamobileltd.com  移动
+                                              244.80 ms
+16  221.183.89.69   AS9808   [CMNET]          中国 上海  I-C chinamobileltd.com  移动
+                                              243.90 ms
+17  221.183.89.46   AS9808   [CMNET]          中国 上海   chinamobileltd.com  移动
+                                              235.94 ms
+18  *
+19  *
+20  *
+21  117.185.117.109 AS9808   [CMNET]          中国 上海市   chinamobileltd.com  移动
+                                              226.11 ms
+No:9/9 Traceroute to 中国 北京 移动 (TCP Mode, Max 30 Hop, IPv4)
+===================================================================
+NextTrace v1.5.0 2025-11-28T02:24:32Z 82cebb7
+[NextTrace API] preferred API IP - [2606:4700:20::681a:c97] - 89.16ms - Misaka.LAX
+IP Geo Data Provider: LeoMoeAPI
+traceroute to 211.136.25.153 (bj-cm-v4.ip.zstaticcdn.com), 30 hops max, 52 bytes payload, TCP mode
+1   192.168.202.1   *                         RFC1918          
+                                              0.44 ms
+2   23.26.125.1     AS23470                   美国 加利福尼亚州 圣克拉拉  reliablesite.net 
+                                              0.65 ms
+3   *
+4   154.24.56.17    AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              2.38 ms
+5   154.24.33.229   AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              1.87 ms
+6   154.54.168.101  AS174    [COGENT-BONE]    美国 德克萨斯 休斯顿  cogentco.com 
+                                              2.76 ms
+7   154.54.171.1    AS174    [COGENT-BONE]    美国 德克萨斯 达拉斯  cogentco.com 
+                                              7.69 ms
+8   154.54.165.26   AS174    [COGENT-BONE]    美国 得克萨斯州 埃尔帕索  cogentco.com 
+                                              18.67 ms
+9   154.54.166.58   AS174    [COGENT-BONE]    美国 亚利桑那 凤凰城  cogentco.com 
+                                              27.44 ms
+10  154.54.44.86    AS174    [COGENT-BONE]    美国 加利福尼亚 洛杉矶  cogentco.com 
+                                              37.83 ms
+11  154.54.27.118   AS174    [COGENT-BONE]    美国 加利福尼亚 洛杉矶  cogentco.com 
+                                              37.95 ms
+12  38.104.84.249   AS174                     美国 加利福尼亚 洛杉矶  cogentco.com 
+                                              37.67 ms
+13  223.120.6.217   AS58453  [CMI-INT]        美国 加利福尼亚 洛杉矶  cmi.chinamobile.com  移动
+                                              38.24 ms
+14  223.120.12.214  AS58453  [CMI-INT]        中国 上海  CMI-CM-Peer cmi.chinamobile.com  移动
+                                              226.88 ms
+15  *
+16  *
+17  *
+18  *
+19  *
+20  *
+21  *
+22  *
+23  *
+24  *
+25  *
+26  *
+27  *
+28  *
+29  *
+30  *
+```
+[/tab]
+[/tabs]
