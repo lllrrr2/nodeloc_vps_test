@@ -226,8 +226,8 @@ install_dependencies() {
         debian|ubuntu)
             export DEBIAN_FRONTEND=noninteractive 
             # 预配置 iperf3 避免交互
-            echo "iperf3 iperf3/start_daemon boolean false" | sudo debconf-set-selections
-            echo "iperf3 iperf3/autostart boolean false" | sudo debconf-set-selections
+            echo "iperf3 iperf3/start_daemon boolean false" | sudo debconf-set-selections 2>/dev/null || true
+            echo "iperf3 iperf3/autostart boolean false" | sudo debconf-set-selections 2>/dev/null || true
             install_cmd="apt-get install -yq -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\""
             sudo apt-get update -yq
             ;;
@@ -494,7 +494,8 @@ generate_markdown_output() {
 
 
     rm "$temp_output_file"
-    read -p "按回车键继续..."  < /dev/tty
+    read -n 1 -s -r -p "按回车键继续..." < /dev/tty
+    echo
     clear
 }
 
