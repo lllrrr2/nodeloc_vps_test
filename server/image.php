@@ -369,18 +369,20 @@ function drawHeader($image, $draw, $width, $timestamp) {
         error_log("[drawHeader] Font set: " . $fontFile);
     }
     
-    // 标题
+    // 标题 - 使用annotation方法
     $textDraw->setFillColor('#FFFFFF');
     $textDraw->setFontSize(28);
     $textDraw->setFontWeight(700);
-    $image->annotateImage($textDraw, 75, 40, 0, "VPS Performance Test Report");
-    error_log("[drawHeader] Title annotated");
+    $textDraw->annotation(75, 40, "VPS Performance Test Report");
+    $image->drawImage($textDraw);
+    error_log("[drawHeader] Title drawn");
     
     // 副标题
     $textDraw->setFontSize(14);
     $textDraw->setFontWeight(400);
-    $image->annotateImage($textDraw, 75, 65, 0, "Generated: " . $timestamp);
-    error_log("[drawHeader] Subtitle annotated");
+    $textDraw->annotation(75, 65, "Generated: " . $timestamp);
+    $image->drawImage($textDraw);
+    error_log("[drawHeader] Subtitle drawn");
     
     // 装饰圆圈
     $headerDraw->setFillColor('#FFA726');
