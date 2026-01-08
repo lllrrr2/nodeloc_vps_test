@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 定义版本
-CURRENT_VERSION="2025-05-20 v1.2.8" # 最新版本号
+CURRENT_VERSION="2026-01-08 v2.0.0" # 最新版本号
 SCRIPT_URL="https://raw.githubusercontent.com/nodeloc/nodeloc_vps_test/main/Nlbench.sh"
 VERSION_URL="https://raw.githubusercontent.com/nodeloc/nodeloc_vps_test/main/version.sh"
 CLOUD_SERVICE_BASE="https://bench.nodeloc.cc"
@@ -328,13 +328,13 @@ sum_run_times() {
     # 从hits.sh获取计数信息
     local response=$(wget --no-check-certificate -qO- --tries=2 --timeout=2 "https://hits.sh/abc.sd.svg?view=today-total" 2>&1)
     
-    # 使用aria-label属性提取计数信息
-    local COUNT=$(echo "$response" | grep -oP 'aria-label="hits: \K[0-9]+\s*/\s*[0-9]+(?=")')
+    # 使用aria-label属性提取计数信息（支持逗号分隔的数字）
+    local COUNT=$(echo "$response" | grep -oP 'aria-label="hits: \K[0-9,]+\s*/\s*[0-9,]+(?=")')
     
     if [[ -n "$COUNT" ]]; then
-        # 提取日常计数和总计数
-        daily_count=$(echo "$COUNT" | cut -d'/' -f1 | tr -d ' ')
-        total_count=$(echo "$COUNT" | cut -d'/' -f2 | tr -d ' ')
+        # 提取日常计数和总计数，并移除逗号
+        daily_count=$(echo "$COUNT" | cut -d'/' -f1 | tr -d ' ,' )
+        total_count=$(echo "$COUNT" | cut -d'/' -f2 | tr -d ' ,' )
         echo "运行次数: 今日 $daily_count, 总计 $total_count"
     else
         echo "无法获取使用计数。"
